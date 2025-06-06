@@ -11,8 +11,8 @@
     "electron-dev": "electron . --dev",
     
     "build-win": "electron-packager . fantasy-map-generator --platform=win32 --arch=x64 --out=dist --overwrite",
-    "build-linux": "electron-packager . fantasy-map-generator --platform=linux --arch=x64 --out=dist --overwrite",
-    "build-desktop": "npm run build-win && npm run build-linux",    "prepare-android": "npm run copy-www && npx cap sync android",
+    "build-linux": "electron-packager . fantasy-map-generator --platform=linux --arch=x64 --out=dist --overwrite",    "build-desktop": "npm run build-win && npm run build-linux",    "prepare-android": "npm run copy-www && npm run ensure-android && npx cap sync android",
+    "ensure-android": "if not exist android (echo Adding Android platform... && npx cap add android) else (echo Android platform exists)",
     "build-android": "npm run prepare-android && cd android && gradlew.bat assembleDebug",
     "build-android-release": "npm run prepare-android && cd android && gradlew.bat assembleRelease",
     

@@ -42,18 +42,22 @@ npm run build-desktop
 
 ### 📱 Android APK
 
-#### Complete Android Setup (First Time Only)
+#### 🎯 Complete Android Setup (First Time Only)
 
 ##### Step 1: Install Android Studio
-1. Download from: https://developer.android.com/studio
-2. Install with default settings
-3. Open Android Studio and complete setup wizard
-4. Install Android SDK (API 30 or higher recommended)
+1. **Download** Android Studio from: https://developer.android.com/studio
+2. **Install** with default settings (accept all SDK licenses)
+3. **Open** Android Studio and complete setup wizard
+4. **Install Android SDK**: 
+   - Go to `File` → `Settings` → `Appearance & Behavior` → `System Settings` → `Android SDK`
+   - Install at least **API level 30** (Android 11) or higher
+   - Install **Android SDK Build-Tools** (latest version)
+   - Install **Android SDK Platform-Tools**
 
 ##### Step 2: Install Java JDK
-1. Download Java JDK 8+ from: https://adoptium.net/
-2. Install with default settings
-3. Note the installation path (e.g., `C:\Program Files\Eclipse Adoptium\jdk-11.0.xx.x-hotspot`)
+1. **Download** Java JDK 8+ from: https://adoptium.net/
+2. **Install** with default settings
+3. **Note the installation path** (e.g., `C:\Program Files\Eclipse Adoptium\jdk-11.0.xx.x-hotspot`)
 
 ##### Step 3: Configure Environment Variables (Windows)
 ```powershell
@@ -61,37 +65,64 @@ npm run build-desktop
 [Environment]::SetEnvironmentVariable("ANDROID_HOME", "C:\Users\$env:USERNAME\AppData\Local\Android\Sdk", "User")
 [Environment]::SetEnvironmentVariable("JAVA_HOME", "C:\Program Files\Eclipse Adoptium\jdk-11.0.xx.x-hotspot", "User")
 
-# Restart PowerShell after setting variables
+# Add Android tools to PATH
+$currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
+$androidPath = "$env:ANDROID_HOME\platform-tools;$env:ANDROID_HOME\tools;$env:ANDROID_HOME\build-tools"
+[Environment]::SetEnvironmentVariable("PATH", "$currentPath;$androidPath", "User")
+
+# ⚠️ IMPORTANT: Restart PowerShell completely after setting variables
 ```
 
 ##### Step 4: Verify Environment Setup
 ```powershell
 # Check ANDROID_HOME
 echo $env:ANDROID_HOME
-# Should show: C:\Users\YourUsername\AppData\Local\Android\Sdk
+# ✅ Should show: C:\Users\YourUsername\AppData\Local\Android\Sdk
 
 # Check Java
 java -version
-# Should show Java version 8 or higher
+# ✅ Should show Java version 8 or higher
 
-# Check Android SDK
+# Check Android SDK platforms
 ls "$env:ANDROID_HOME\platforms"
-# Should list Android platforms like android-30, android-31, etc.
+# ✅ Should list platforms like: android-30, android-31, android-32, etc.
+
+# Check Android build tools
+ls "$env:ANDROID_HOME\build-tools"
+# ✅ Should list versions like: 30.0.3, 31.0.0, 32.0.0, etc.
 ```
 
-#### Build Android APK
+#### 🔨 Build Android APK
 
-##### Debug Version (for testing)
+##### 🐛 Debug Version (for testing - automatically signed)
 ```bash
 npm run build-android
 ```
-**Output:** `android/app/build/outputs/apk/debug/app-debug.apk`
+- **Output**: `android/app/build/outputs/apk/debug/app-debug.apk`
+- **Signed**: ✅ Automatically signed with debug keystore
+- **Installable**: ✅ Ready to install on any Android device/emulator
+- **Use for**: Testing, BlueStacks, development
 
-##### Release Version (for distribution)
+##### 🚀 Release Version (for distribution - automatically signed)
 ```bash
 npm run build-android-release
 ```
-**Output:** `android/app/build/outputs/apk/release/app-release.apk`
+- **Output**: `android/app/build/outputs/apk/release/app-release.apk`
+- **Signed**: ✅ Automatically signed with auto-generated keystore
+- **Installable**: ✅ Ready to install on any Android device
+- **Use for**: Distribution, sharing, production (not Play Store)
+
+##### 📝 What's Automatically Configured
+Both debug and release builds are **automatically signed** with keystores, so you don't need to worry about:
+- ❌ ~~Manual keystore creation~~
+- ❌ ~~Manual signing configuration~~
+- ❌ ~~Unsigned APK issues~~
+
+The build process automatically:
+- ✅ Creates debug keystore if it doesn't exist
+- ✅ Configures signing for both debug and release
+- ✅ Generates installable APK files
+- ✅ Copies all mobile compatibility fixes
 
 ## 📱 Mobile Compatibility Features
 
@@ -193,31 +224,57 @@ Fantasy-Map-Generator-Ck3/
 - **Gradle** - Android build system
 - **electron-packager** - Desktop app packaging
 
-## 📦 Available Scripts
+## 📦 Complete Command Reference
 
-### Build Scripts
+### 🏗️ Build Commands
+
+#### Desktop Applications
 ```bash
-npm run build-win               # Build Windows .exe
-npm run build-linux             # Build Linux binary
-npm run build-desktop           # Build both desktop versions
-npm run build-android           # Build Android debug APK
-npm run build-android-release   # Build Android release APK
+npm run build-win               # 🪟 Build Windows .exe
+npm run build-linux             # 🐧 Build Linux binary  
+npm run build-desktop           # 🖥️ Build both desktop versions
 ```
 
-### Development Scripts
+#### Android Applications  
 ```bash
-npm run electron                # Run desktop app in development
-npm run electron-dev            # Run desktop app with dev flag
-npm run open-android            # Open Android project in Android Studio
+npm run build-android           # 🐛 Build debug APK (testing)
+npm run build-android-release   # 🚀 Build release APK (distribution)
 ```
 
-### Utility Scripts
+### 🔧 Development Commands
 ```bash
-npm run copy-www                # Copy web files to www/ folder
-npm run test-scripts            # Test file copying process
-npm run clean                   # Remove all build folders
-npm run clean-build             # Clean and rebuild desktop
+npm run electron                # 🖥️ Run desktop app in development
+npm run electron-dev            # 🖥️ Run desktop app with dev flag  
+npm run open-android            # 📱 Open Android project in Android Studio
 ```
+
+### 🛠️ Utility Commands
+```bash
+npm run copy-www                # 📋 Copy web files to www/ folder
+npm run create-www              # 📁 Create www/ directory
+npm run copy-files              # 📂 Copy all files to www/
+npm run ensure-android          # ✅ Add Android platform if missing
+npm run prepare-android         # 🔄 Prepare Android build (copy + sync)
+npm run test-scripts            # 🧪 Test file copying process
+npm run clean                   # 🧹 Remove all build folders
+npm run clean-build             # 🔄 Clean and rebuild desktop
+```
+
+### 📊 Output Locations
+
+#### Desktop Builds
+- **Windows**: `dist/fantasy-map-generator-win32-x64/fantasy-map-generator.exe`
+- **Linux**: `dist/fantasy-map-generator-linux-x64/fantasy-map-generator`
+
+#### Android Builds  
+- **Debug**: `android/app/build/outputs/apk/debug/app-debug.apk`
+- **Release**: `android/app/build/outputs/apk/release/app-release.apk`
+
+#### Generated Folders (Git Ignored)
+- **`android/`** - Generated Android project
+- **`www/`** - Generated web assets for mobile
+- **`dist/`** - Generated desktop builds
+- **`node_modules/`** - NPM dependencies
 
 ## 🚨 Troubleshooting
 
@@ -245,147 +302,409 @@ npm run clean-build
 
 ### Android Build Issues
 
-#### 🎯 Mobile Compatibility Issues (SOLVED)
-If you experience **touch/click problems** in BlueStacks or mobile devices:
-- ✅ **Already Fixed**: This version includes mobile compatibility improvements
-- ✅ **Working Features**: Touch events, menu closing, emulator support
-- ✅ **Files Updated**: `mobile-compatibility.js` and `azgaar-touch-enhancements.js`
+#### 🔧 Common Problems and Solutions
 
-#### SDK location not found
+##### ❌ "SDK location not found" Error
 ```bash
-# Check environment variables
+# 1. Check environment variables are set
 echo $env:ANDROID_HOME
 echo $env:JAVA_HOME
 
-# If empty, set them (adjust paths to your installation):
+# 2. If empty or incorrect, set them (adjust paths to your installation)
 [Environment]::SetEnvironmentVariable("ANDROID_HOME", "C:\Users\$env:USERNAME\AppData\Local\Android\Sdk", "User")
 [Environment]::SetEnvironmentVariable("JAVA_HOME", "C:\Program Files\Eclipse Adoptium\jdk-11.0.xx.x-hotspot", "User")
 
-# Restart PowerShell and try again
+# 3. ⚠️ CRITICAL: Restart PowerShell completely and try again
 ```
 
-#### Gradle wrapper errors
+##### ❌ "android platform has not been added" Error
 ```bash
-# Make sure gradlew.bat is executable
+# This is automatically handled, but if it persists:
+npx cap add android
+npx cap sync android
+npm run build-android
+```
+
+##### ❌ Gradle wrapper permission errors
+```bash
+# Fix gradlew.bat permissions (Windows)
 cd android
 icacls gradlew.bat /grant:r %USERNAME%:F
 
-# Try running build directly
+# Try building directly in Android folder
 gradlew.bat assembleDebug
 ```
 
-#### Android platform not added
-```bash
-# Add Android platform manually
-npx cap add android
-npx cap sync android
-```
-
-#### Java version issues
+##### ❌ Java version issues
 ```bash
 # Check Java version
 java -version
 
 # Should show version 8 or higher
-# If not, download from: https://adoptium.net/
+# If wrong version or not found:
+# 1. Download correct Java from: https://adoptium.net/
+# 2. Set JAVA_HOME correctly
+# 3. Restart PowerShell
 ```
 
-#### Build cache issues
+##### ❌ Build cache/corruption issues
 ```bash
-# Clean everything and start fresh
+# Nuclear option - clean everything and rebuild
 npm run clean
-rm -rf android/
+Remove-Item -Recurse -Force android/ -ErrorAction Ignore
+Remove-Item -Recurse -Force www/ -ErrorAction Ignore
 npm run build-android
 ```
 
-#### Capacitor sync issues
+##### ❌ "Unable to find a valid app" or Capacitor errors
 ```bash
-# Force sync
-npx cap sync android --force
+# Force regenerate Android platform
+npx cap add android --force
+npx cap sync android
+npm run build-android
 ```
 
-## 📱 Installing APK on Android Device
-
-### ✅ BlueStacks Installation (Verified Working)
-1. Download **BlueStacks** from official website
-2. Install and start BlueStacks
-3. Copy `app-debug.apk` to a location accessible by BlueStacks
-4. In BlueStacks, open file manager or drag APK directly
-5. Install the app
-6. **Touch events now work properly!** 🎉
-
-### Real Android Device Installation
-### Real Android Device Installation
-
-#### Enable Developer Options
-1. Go to **Settings** → **About Phone**
-2. Tap **Build Number** 7 times
-3. Go back to **Settings** → **Developer Options**
-4. Enable **USB Debugging**
-5. Enable **Install Unknown Apps** for your file manager
-
-#### Install APK
-1. Copy `app-debug.apk` to your Android device
-2. Open the APK file with a file manager
-3. Allow installation from unknown sources if prompted
-4. Install the app
-
-### Alternative: ADB Install
+##### ❌ Gradle daemon issues
 ```bash
-# Connect device via USB
+# Stop all Gradle processes and try again
+cd android
+gradlew.bat --stop
+gradlew.bat assembleDebug
+```
+
+#### 📋 Verify Successful Build
+After a successful build, you should see:
+```
+✅ BUILD SUCCESSFUL in [time]
+✅ APK location: android/app/build/outputs/apk/debug/app-debug.apk
+✅ File size: ~50-100MB (depending on assets)
+```
+
+#### 🎯 Quick Environment Check Script
+```powershell
+# Run this to verify your setup:
+Write-Host "=== Android Build Environment Check ===" -ForegroundColor Green
+
+Write-Host "`nJava Version:" -ForegroundColor Yellow
+java -version
+
+Write-Host "`nEnvironment Variables:" -ForegroundColor Yellow
+Write-Host "ANDROID_HOME: $env:ANDROID_HOME"
+Write-Host "JAVA_HOME: $env:JAVA_HOME"
+
+Write-Host "`nAndroid SDK Check:" -ForegroundColor Yellow
+if (Test-Path "$env:ANDROID_HOME\platforms") {
+    Write-Host "✅ Platforms:" -ForegroundColor Green
+    ls "$env:ANDROID_HOME\platforms" | Select-Object Name
+} else {
+    Write-Host "❌ Android platforms not found!" -ForegroundColor Red
+}
+
+if (Test-Path "$env:ANDROID_HOME\build-tools") {
+    Write-Host "✅ Build tools:" -ForegroundColor Green
+    ls "$env:ANDROID_HOME\build-tools" | Select-Object Name
+} else {
+    Write-Host "❌ Android build-tools not found!" -ForegroundColor Red
+}
+
+Write-Host "`nProject Status:" -ForegroundColor Yellow
+if (Test-Path "android") {
+    Write-Host "✅ Android platform exists" -ForegroundColor Green
+} else {
+    Write-Host "⚠️ Android platform needs to be added" -ForegroundColor Yellow
+}
+
+if (Test-Path "package.json") {
+    Write-Host "✅ In correct project directory" -ForegroundColor Green
+} else {
+    Write-Host "❌ Not in project root directory!" -ForegroundColor Red
+}
+```
+
+## 📱 Installing APK on Android Devices
+
+### 🎮 BlueStacks Installation (Verified Working ✅)
+**BlueStacks is the easiest way to test your APK on PC:**
+
+1. **Download BlueStacks** from: https://www.bluestacks.com/
+2. **Install and start** BlueStacks (use latest version)
+3. **Locate your APK**: Navigate to `android/app/build/outputs/apk/debug/app-debug.apk`
+4. **Install methods** (choose one):
+   - **Drag & Drop**: Simply drag the APK file into BlueStacks window
+   - **File Manager**: Open BlueStacks file manager, navigate to APK, and click install
+   - **From PC**: Use "Install APK" option in BlueStacks interface
+
+5. **✅ Touch events now work perfectly!** The app will open and be fully functional with mouse/touch input
+
+### 📱 Real Android Device Installation
+
+#### Method 1: Direct Install (Easiest)
+1. **Enable Developer Options**:
+   - Go to `Settings` → `About Phone`
+   - Tap `Build Number` **7 times** rapidly
+   - Go back to `Settings` → `Developer Options` (now visible)
+   - Enable `USB Debugging`
+
+2. **Enable Unknown Sources**:
+   - Go to `Settings` → `Security` (or `Apps & notifications`)
+   - Enable `Install unknown apps` for your file manager
+   - Or enable `Unknown sources` (older Android versions)
+
+3. **Install APK**:
+   - Copy `app-debug.apk` or `app-release.apk` to your device (via USB, cloud, email, etc.)
+   - Open the APK file with your file manager
+   - Tap `Install` when prompted
+   - Allow installation from unknown sources if asked
+
+#### Method 2: ADB Install (Advanced)
+```bash
+# 1. Connect device via USB (with USB Debugging enabled)
 adb devices
+# Should show your device
 
-# Install APK directly
+# 2. Install APK directly
 adb install android/app/build/outputs/apk/debug/app-debug.apk
+# For release version:
+adb install android/app/build/outputs/apk/release/app-release.apk
 ```
+
+#### Method 3: Wireless Install
+1. **Upload APK** to cloud storage (Google Drive, Dropbox, etc.)
+2. **Download on device** using browser
+3. **Open downloaded APK** from notifications or file manager
+4. **Install** as described in Method 1
+
+### 🛠️ Other Android Emulators
+
+#### Nox Player
+1. Download from: https://www.bignox.com/
+2. Install and start Nox
+3. Drag APK into emulator window or use APK installer
+
+#### MEmu Play
+1. Download from: https://www.memuplay.com/
+2. Install and start MEmu
+3. Use "Install APK" button or drag & drop APK
+
+#### LDPlayer
+1. Download from: https://www.ldplayer.net/
+2. Install and start LDPlayer
+3. Drag APK into emulator or use APK installer
+
+### 🔍 Troubleshooting Installation
+
+#### ❌ "App not installed" Error
+- **Solution 1**: Uninstall any previous version first
+- **Solution 2**: Clear storage space (APK needs ~100MB free space)
+- **Solution 3**: Enable "Install unknown apps" for your file manager
+
+#### ❌ "Parse error" or "Invalid APK"
+- **Solution**: APK file may be corrupted during transfer
+  - Re-download/re-copy the APK file
+  - Try building APK again: `npm run build-android`
+
+#### ❌ "Installation blocked"
+- **Solution**: Enable installation from unknown sources
+  - Check `Settings` → `Security` → `Unknown sources`
+  - Or `Settings` → `Apps` → `Special access` → `Install unknown apps`
+
+#### ❌ App crashes on startup
+- **Solution**: Device may not meet requirements
+  - Ensure Android 6.0+ (API 23+)
+  - Ensure at least 2GB RAM available
+  - Check device storage (need ~200MB free)
+
+### 📊 Installation Verification
+
+After successful installation, you should see:
+- ✅ **App icon** in device app drawer
+- ✅ **App opens** without crashing
+- ✅ **Touch/mouse input** works correctly
+- ✅ **UI renders** properly on device screen
+- ✅ **All features** functional (map generation, saving, etc.)
+
+### 🎯 Recommended Testing Workflow
+
+1. **Build APK**: `npm run build-android`
+2. **Test in BlueStacks** first (easiest debugging)
+3. **Test on real device** for final verification
+4. **Test key features**:
+   - Map generation
+   - Touch/pan/zoom controls  
+   - Menu interactions
+   - File save/load
+   - Settings changes
+
+This ensures your APK works across different Android environments before distribution.
 
 ## 🔄 Complete Build Workflow
 
-### First Time Setup
+### 🆕 First Time Setup (New Developer)
 ```bash
-# 1. Clone repository
+# 1. Clone the repository
 git clone <repository-url>
 cd Fantasy-Map-Generator-Ck3
 
 # 2. Install Node.js dependencies
 npm install
 
-# 3. For Android: Setup Android Studio and environment variables
-# (Follow Android Setup section above)
-
-# 4. Test desktop build
+# 3. Test desktop version works
 npm run electron
 
-# 5. Test Android build (if Android setup is complete)
+# 4. For Android: Complete Android Setup (see Android section above)
+#    - Install Android Studio + SDK
+#    - Install Java JDK 8+
+#    - Set ANDROID_HOME and JAVA_HOME environment variables
+#    - Restart PowerShell
+
+# 5. Test Android build (after Android setup)
 npm run build-android
 ```
 
-### Building for Distribution
+### 🚀 Production Build Process
 ```bash
-# 1. Clean previous builds
+# 1. Clean any previous builds
 npm run clean
 
-# 2. Build desktop versions
+# 2. Build desktop applications
 npm run build-desktop
-
-# 3. Build Android APK
-npm run build-android
-
-# 4. Outputs will be in:
+# ✅ Outputs:
 #    - dist/fantasy-map-generator-win32-x64/fantasy-map-generator.exe
 #    - dist/fantasy-map-generator-linux-x64/fantasy-map-generator
+
+# 3. Build Android APKs
+npm run build-android           # Debug version for testing
+npm run build-android-release   # Release version for distribution
+# ✅ Outputs:
 #    - android/app/build/outputs/apk/debug/app-debug.apk
+#    - android/app/build/outputs/apk/release/app-release.apk
+
+# 4. All builds complete! 🎉
 ```
 
-### Testing Builds
+### 🧪 Testing Workflow
 ```bash
 # Test desktop version
 npm run electron
+# ✅ Should open app window on desktop
 
-# Test Android in emulator (requires Android Studio)
-npm run open-android
-# Then use "Run app" button in Android Studio
+# Test Android in BlueStacks
+npm run build-android
+# Then drag app-debug.apk into BlueStacks
+# ✅ Should install and run with working touch events
+
+# Test Android on real device  
+# Transfer app-debug.apk to device and install
+# ✅ Should work on Android 6.0+ devices
 ```
+
+### 🔧 Development Workflow
+```bash
+# Make code changes to source files
+# Then test changes:
+
+# For desktop changes:
+npm run electron                # Quick test in development
+
+# For mobile changes:
+npm run build-android           # Build new APK
+# Install in BlueStacks/device to test
+
+# Before committing:
+npm run build-desktop           # Verify desktop builds work
+npm run build-android           # Verify Android builds work
+# ✅ All builds should succeed before git push
+```
+
+### 🚨 Troubleshooting Workflow
+```bash
+# If any build fails:
+
+# 1. Clean everything
+npm run clean
+
+# 2. Check environment (for Android issues)
+echo $env:ANDROID_HOME
+echo $env:JAVA_HOME
+java -version
+
+# 3. Reinstall dependencies  
+Remove-Item -Recurse -Force node_modules -ErrorAction Ignore
+npm install
+
+# 4. Try building again
+npm run build-desktop
+npm run build-android
+
+# 5. If Android still fails, regenerate platform
+Remove-Item -Recurse -Force android -ErrorAction Ignore  
+npm run build-android
+```
+
+### 📋 Pre-Release Checklist
+
+Before distributing your builds:
+
+#### ✅ Desktop Checklist
+- [ ] `npm run build-desktop` completes without errors
+- [ ] Windows .exe runs and opens properly  
+- [ ] Linux binary runs and opens properly
+- [ ] All core features work (map generation, save/load, etc.)
+
+#### ✅ Android Checklist  
+- [ ] `npm run build-android` completes without errors
+- [ ] APK installs successfully in BlueStacks
+- [ ] APK installs successfully on real Android device
+- [ ] Touch/mouse events work correctly
+- [ ] UI renders properly on mobile screen
+- [ ] All features work (especially touch-based interactions)
+- [ ] App doesn't crash on startup or during use
+
+#### ✅ Mobile Compatibility Verification
+- [ ] Touch events work in BlueStacks (**critical fix**)
+- [ ] Menu closing works on mobile
+- [ ] Drag/pan/zoom gestures work
+- [ ] No invasive event handler conflicts
+- [ ] Performance is acceptable on mobile devices
+
+#### ✅ File Integrity
+- [ ] All builds are reasonable size (~50-100MB for Android)
+- [ ] No missing assets or broken images
+- [ ] All scripts and modules load correctly
+
+### 📤 Distribution
+
+#### Desktop Distribution
+1. **Windows**: Share the entire `dist/fantasy-map-generator-win32-x64/` folder
+   - Users run `fantasy-map-generator.exe`
+   - Include all files in the folder (dependencies included)
+
+2. **Linux**: Share the entire `dist/fantasy-map-generator-linux-x64/` folder  
+   - Users run `./fantasy-map-generator`
+   - Make sure executable has proper permissions
+
+#### Android Distribution
+1. **Testing/Beta**: Share `app-debug.apk`
+   - Easier to install (signed with debug key)
+   - Perfect for testing and feedback
+
+2. **Production/Release**: Share `app-release.apk`
+   - Signed with release key
+   - For final distribution
+
+3. **Installation**: Provide installation instructions (see "Installing APK" section)
+
+### 🔄 Continuous Updates
+
+When you make changes:
+
+1. **Source Code**: Commit only source files, never build outputs
+2. **Testing**: Test both desktop and mobile after changes
+3. **Versioning**: Update version in `package.json` for releases
+4. **Building**: Generate fresh builds for each release
+5. **Documentation**: Update this README if build process changes
+
+This ensures a consistent, reliable build process for all developers and users.
 
 ## 📋 System Requirements
 
