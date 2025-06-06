@@ -1,18 +1,29 @@
 {
   "name": "fantasy-map-generator",
   "version": "1.0.0",
-  "description": "Azgaar's Fantasy Map Generator - Desktop Application",
+  "description": "Azgaar's Fantasy Map Generator - Desktop & Mobile Application",
   "main": "electron-main.js",
+  "homepage": "https://azgaar.github.io/Fantasy-Map-Generator",
+  "author": "Azgaar (original), Community (desktop/mobile conversion)",
+  "keywords": ["fantasy", "map", "generator", "cartography", "worldbuilding", "electron", "capacitor", "desktop", "mobile"],
   "scripts": {
     "electron": "electron .",
     "electron-dev": "electron . --dev",
-    "build": "electron-builder",
-    "build-win": "electron-builder --win",
-    "build-linux": "electron-builder --linux",
-    "build-all": "electron-builder --win --linux",
-    "pack-win": "electron-packager . fantasy-map-generator --platform=win32 --arch=x64 --out=dist --overwrite",
-    "pack-linux": "electron-packager . fantasy-map-generator --platform=linux --arch=x64 --out=dist --overwrite",
-    "dist": "npm run build-all"
+    
+    "build-win": "electron-packager . fantasy-map-generator --platform=win32 --arch=x64 --out=dist --overwrite --ignore=android --ignore=www --ignore=node_modules",
+    "build-linux": "electron-packager . fantasy-map-generator --platform=linux --arch=x64 --out=dist --overwrite --ignore=android --ignore=www --ignore=node_modules",
+    "build-desktop": "npm run build-win && npm run build-linux",    "prepare-android": "npm run copy-www && npx cap sync android",
+    "build-android": "npm run prepare-android && cd android && gradlew.bat assembleDebug",
+    "build-android-release": "npm run prepare-android && cd android && gradlew.bat assembleRelease",
+    
+    "copy-www": "npm run create-www && npm run copy-files",
+    "create-www": "if not exist www mkdir www",
+    "copy-files": "copy index.html www\\ && copy main.js www\\ && copy index.css www\\ && copy icons.css www\\ && copy sw.js www\\ && copy versioning.js www\\ && copy manifest.webmanifest www\\ && xcopy charges www\\charges\\ /E /I /Y && xcopy components www\\components\\ /E /I /Y && xcopy config www\\config\\ /E /I /Y && xcopy heightmaps www\\heightmaps\\ /E /I /Y && xcopy images www\\images\\ /E /I /Y && xcopy libs www\\libs\\ /E /I /Y && xcopy modules www\\modules\\ /E /I /Y && xcopy styles www\\styles\\ /E /I /Y && xcopy utils www\\utils\\ /E /I /Y",
+      "clean": "if exist dist rmdir /s /q dist && if exist android rmdir /s /q android && if exist www rmdir /s /q www",
+    "clean-build": "npm run clean && npm run build-desktop",
+    "test-scripts": "echo Testing all build scripts... && npm run copy-www && echo WWW copy completed!",
+    
+    "open-android": "npx cap open android"
   },
   "build": {
     "appId": "com.azgaar.fantasy-map-generator",

@@ -1,13 +1,13 @@
 {
   "background_color": "#fff",
   "display": "standalone",
-  "orientation": "any",
-  "name": "Azgaar's Fantasy Map Generator",
-  "short_name": "Azgaar's Fantasy Map Generator",
-  "description": "Web application generating interactive and highly customizable maps",
-  "scope": "/Fantasy-Map-Generator/",
-  "start_url": "/Fantasy-Map-Generator/?source=pwa",
-  "url": "https://azgaar.github.io/Fantasy-Map-Generator",
+  "orientation": "landscape",
+  "name": "Fantasy Map Generator",
+  "short_name": "FMG",
+  "description": "Azgaar's Fantasy Map Generator - Mobile Version",
+  "scope": "./",
+  "start_url": "./",
+  "theme_color": "#5e4fa2",
   "icons": [
     {
       "src": "images/icons/icon_x512.png",
