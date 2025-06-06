@@ -147,11 +147,30 @@ This version includes **improved mobile compatibility** specifically designed to
 
 ### 🔧 Mobile-Specific Files
 The following files handle mobile compatibility and are automatically included in both web and Android builds:
-- **`mobile-compatibility.js`** - Core mobile detection and improvements
+- **`mobile-compatibility-v2.js`** - 🆕 Revolutionary custom dialog minimization system
 - **`azgaar-touch-enhancements.js`** - Safe touch enhancements (cleaned version)
 - **`mobile-dialog-scroll-fix.js`** - Scroll fixes for dialogs and popups
 - **`universal-scroll-fix.js`** - Comprehensive scroll system for all UI elements
 - **`mobile-options-fix.css`** - CSS fixes for mobile menu scrolling and sizing
+
+### 🆕 Revolutionary Dialog Minimization System
+This version includes a **completely new dialog minimization system** designed specifically for Android devices:
+
+#### ✅ Custom Minimization Features
+- **🎯 Complete jQuery UI Bypass** - No longer relies on broken jQuery UI minimize functions
+- **📱 Android WebView Optimized** - Built specifically for Capacitor Android apps
+- **🖱️ Touch-Friendly Controls** - 44px minimum button sizes for easy tapping
+- **📊 Visual Minimized State** - Clear visual indicators when dialogs are minimized
+- **🗂️ Minimized Dialog Tabs** - Elegant bottom-screen tabs for restored access
+- **⚡ Instant Restore** - One-tap restoration from minimized state
+- **🔄 Smart State Management** - Tracks dialog states independently of jQuery UI
+
+#### 🚫 Problems Solved
+- **❌ jQuery UI minimize buttons broken on Android** → ✅ Custom minimize system works perfectly
+- **❌ Minimized dialogs completely inaccessible** → ✅ Minimized tabs provide easy access
+- **❌ Touch events not recognized properly** → ✅ Native touch event handling
+- **❌ No visual feedback for minimized state** → ✅ Clear orange visual indicators
+- **❌ Conflicting with jQuery UI internals** → ✅ Independent minimization system
 
 ### 📱 Enhanced Scroll System
 This version includes a **comprehensive scroll system** specifically designed for mobile devices:
@@ -170,12 +189,25 @@ This version includes a **comprehensive scroll system** specifically designed fo
 - **Consistent behavior** - All menus maintain the same size and scroll behavior
 
 #### 🔧 Technical Implementation
-The scroll system works by:
-1. **Detecting mobile devices** and small screens automatically
-2. **Applying max-height limits** to prevent overflow
-3. **Enabling scroll** with `overflow-y: auto` and `-webkit-overflow-scrolling: touch`
-4. **Styling scrollbars** for better visibility on touch devices
-5. **Monitoring dynamic content** and applying fixes automatically
+The new minimization system works by:
+1. **Detecting jQuery UI dialogs** automatically with MutationObserver
+2. **Replacing broken minimize buttons** with custom touch-friendly buttons  
+3. **Creating minimized tabs container** at bottom of screen when dialogs are minimized
+4. **Storing original dialog states** to enable perfect restoration
+5. **Bypassing jQuery UI completely** for minimize/maximize operations
+6. **Using native DOM manipulation** for reliable cross-platform compatibility
+
+#### 🎯 How the New System Works
+```javascript
+// Old broken approach (jQuery UI dependent):
+❌ $('.ui-dialog').dialog('minimize') // Broken on Android WebView
+
+// New custom approach (jQuery UI independent):  
+✅ CustomDialogMinimizer.minimizeDialog(dialog) // Works everywhere
+✅ Creates visual tab for easy restoration
+✅ Stores complete dialog state for perfect restoration
+✅ 44px touch-friendly minimize/restore buttons
+```
 
 ### 📋 Mobile Testing
 ```bash
@@ -190,6 +222,14 @@ npm run build-android
 # Test on real Android device
 npm run build-android
 # Transfer APK to device and install
+
+# 🆕 Test new dialog minimization system specifically
+# 1. Open any dialog (Options, Units, etc.)
+# 2. Click the minimize button (− symbol)
+# 3. Verify dialog minimizes and tab appears at bottom
+# 4. Click the tab to restore dialog
+# 5. Verify dialog restores perfectly to original state
+# 6. Test with multiple dialogs minimized simultaneously
 
 # Test scroll functionality specifically
 # 1. Open Options menu
@@ -239,7 +279,7 @@ Fantasy-Map-Generator-Ck3/
 │   ├── libs/                    # Third-party libraries
 │   ├── utils/                   # Utility functions
 │   ├── config/                  # Configuration files
-│   ├── mobile-compatibility.js  # 📱 Mobile compatibility layer
+│   ├── mobile-compatibility-v2.js # 🆕 Revolutionary dialog minimization system
 │   ├── azgaar-touch-enhancements.js # 📱 Safe touch improvements
 │   ├── mobile-dialog-scroll-fix.js # 📱 Dialog scroll fixes
 │   ├── universal-scroll-fix.js  # 📱 Universal scroll system
@@ -697,6 +737,10 @@ Before distributing your builds:
 - [ ] APK installs successfully on real Android device
 - [ ] Touch/mouse events work correctly
 - [ ] UI renders properly on mobile screen
+- [ ] **🆕 Dialog minimization works perfectly** - Click minimize button (−) and verify dialog minimizes
+- [ ] **🆕 Dialog restoration works** - Click minimized tab at bottom and verify dialog restores completely
+- [ ] **🆕 Multiple minimized dialogs work** - Minimize several dialogs and verify all tabs appear
+- [ ] **🆕 Minimized state is visually clear** - Minimized tabs are obvious and easy to click
 - [ ] **Menu scrolling works** - Options menu and other long menus scroll properly
 - [ ] **Menu sizing is correct** - Menus don't exceed screen boundaries
 - [ ] **Dropdowns are reasonably sized** - Select elements aren't oversized

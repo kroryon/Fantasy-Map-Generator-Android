@@ -488,9 +488,9 @@
                 // Allow smooth scrolling, don't prevent default
             }, { passive: true });
         }
-    }
-
-    function improveDialogs() {
+    }    function improveDialogs() {
+        console.log('Improving dialogs for Android compatibility...');
+        
         // Improve dialog behavior on mobile
         const improveDialog = (dialog) => {
             // Make dialogs more touch-friendly
@@ -507,30 +507,283 @@
             }
         };
 
-        // Apply to existing dialogs
+        // Fix jQuery UI dialog minimize/maximize and close buttons for Android
+        const fixJQueryUIDialogButtons = () => {
+            console.log('Fixing jQuery UI dialog buttons for Android...');
+            
+            // Wait for jQuery to be available
+            if (typeof $ === 'undefined' || !$.fn.dialog) {
+                setTimeout(fixJQueryUIDialogButtons, 1000);
+                return;
+            }
+            
+            // Find all jQuery UI dialogs
+            const jqueryDialogs = document.querySelectorAll('.ui-dialog');
+            
+            jqueryDialogs.forEach(dialogWidget => {
+                const dialogContent = dialogWidget.querySelector('.ui-dialog-content');
+                if (!dialogContent) return;
+                
+                const dialogId = dialogContent.id || 'unknown';
+                const titlebar = dialogWidget.querySelector('.ui-dialog-titlebar');
+                const collapseBtn = dialogWidget.querySelector('.ui-dialog-titlebar-collapse');
+                const closeBtn = dialogWidget.querySelector('.ui-dialog-titlebar-close');
+                
+                if (!titlebar) return;
+                
+                console.log(`Fixing dialog buttons for: ${dialogId}`);
+                
+                // Store original state
+                let isMinimized = false;
+                
+                // Fix MINIMIZE button if it exists
+                if (collapseBtn) {
+                    console.log(`Fixing minimize button for ${dialogId}`);
+                    
+                    // Remove existing event handlers that might be broken
+                    const newCollapseBtn = collapseBtn.cloneNode(true);
+                    collapseBtn.parentNode.replaceChild(newCollapseBtn, collapseBtn);
+                      // Make button more touch-friendly with better visual feedback
+                    newCollapseBtn.style.minWidth = '44px';
+                    newCollapseBtn.style.minHeight = '44px';
+                    newCollapseBtn.style.display = 'flex';
+                    newCollapseBtn.style.alignItems = 'center';
+                    newCollapseBtn.style.justifyContent = 'center';
+                    newCollapseBtn.style.fontSize = '18px';
+                    newCollapseBtn.style.fontWeight = 'bold';
+                    newCollapseBtn.style.background = 'rgba(0,120,215,0.2)';
+                    newCollapseBtn.style.borderRadius = '6px';
+                    newCollapseBtn.style.cursor = 'pointer';
+                    newCollapseBtn.style.border = '2px solid rgba(0,120,215,0.4)';
+                    newCollapseBtn.style.transition = 'all 0.2s ease';
+                    
+                    // Add hover/touch effects
+                    newCollapseBtn.addEventListener('mouseenter', function() {
+                        this.style.background = 'rgba(0,120,215,0.4)';
+                        this.style.transform = 'scale(1.1)';
+                    });
+                    
+                    newCollapseBtn.addEventListener('mouseleave', function() {
+                        this.style.background = 'rgba(0,120,215,0.2)';
+                        this.style.transform = 'scale(1)';
+                    });
+                    
+                    newCollapseBtn.addEventListener('touchstart', function() {
+                        this.style.background = 'rgba(0,120,215,0.6)';
+                        this.style.transform = 'scale(0.95)';
+                    });
+                    
+                    newCollapseBtn.addEventListener('touchend', function() {
+                        this.style.background = 'rgba(0,120,215,0.2)';
+                        this.style.transform = 'scale(1)';
+                    });                    // Create working toggle functionality using jQuery UI's internal methods
+                    const toggleMinimize = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        console.log(`Toggle minimize for ${dialogId}, currently minimized: ${isMinimized}`);
+                        
+                        try {
+                            // Use jQuery UI's built-in minimize/maximize functionality
+                            const $dialog = $(dialogContent);
+                            
+                            if (isMinimized) {
+                                // MAXIMIZE: Restore the dialog
+                                console.log(`Maximizing dialog ${dialogId}`);
+                                
+                                // Restore the dialog content and sizing
+                                dialogContent.style.display = '';
+                                dialogWidget.style.height = '';
+                                dialogWidget.style.minHeight = '';
+                                
+                                // Try to trigger jQuery UI's maximize if available
+                                if ($dialog.dialog('option', 'height')) {
+                                    $dialog.dialog('option', 'height', 'auto');
+                                }
+                                if ($dialog.dialog('option', 'width')) {
+                                    $dialog.dialog('option', 'width', 'auto');
+                                }
+                                
+                                isMinimized = false;
+                                
+                                // Update button appearance - normalize
+                                newCollapseBtn.innerHTML = '−'; // Minimize icon
+                                newCollapseBtn.title = 'Minimize';
+                                newCollapseBtn.style.background = 'rgba(0,120,215,0.2)';
+                                newCollapseBtn.style.border = '2px solid rgba(0,120,215,0.4)';
+                                newCollapseBtn.style.color = '';
+                                
+                                // Clear minimized styling
+                                titlebar.style.backgroundColor = '';
+                                titlebar.style.border = '';
+                                titlebar.style.color = '';
+                                titlebar.style.boxShadow = '';
+                                titlebar.style.fontWeight = '';
+                                
+                                console.log(`Dialog ${dialogId} MAXIMIZED`);
+                            } else {
+                                // MINIMIZE: Hide the dialog content
+                                console.log(`Minimizing dialog ${dialogId}`);
+                                
+                                // Store current dimensions before minimizing
+                                const currentHeight = dialogWidget.offsetHeight;
+                                const titlebarHeight = titlebar.offsetHeight;
+                                
+                                // Hide content and set to title bar height only
+                                dialogContent.style.display = 'none';
+                                dialogWidget.style.height = titlebarHeight + 'px';
+                                dialogWidget.style.minHeight = titlebarHeight + 'px';
+                                
+                                isMinimized = true;
+                                
+                                // Update button appearance - make it VERY obvious it's minimized
+                                newCollapseBtn.innerHTML = '▲'; // Up arrow to indicate restore
+                                newCollapseBtn.title = 'Click to Restore Dialog';
+                                newCollapseBtn.style.background = '#4CAF50';
+                                newCollapseBtn.style.border = '2px solid #45a049';
+                                newCollapseBtn.style.color = 'white';
+                                
+                                // Style title bar to indicate minimized state
+                                titlebar.style.backgroundColor = '#4CAF50';
+                                titlebar.style.border = '2px solid #45a049';
+                                titlebar.style.color = 'white';
+                                titlebar.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+                                titlebar.style.fontWeight = 'bold';
+                                
+                                console.log(`Dialog ${dialogId} MINIMIZED`);
+                            }
+                        } catch (error) {
+                            console.error(`Error toggling minimize for ${dialogId}:`, error);
+                            // Fallback behavior
+                            isMinimized = !isMinimized;
+                            dialogContent.style.display = isMinimized ? 'none' : '';
+                            dialogWidget.style.height = isMinimized ? titlebar.offsetHeight + 'px' : '';
+                        }
+                    };                    
+                    // Add reliable event listeners with proper touch handling
+                    newCollapseBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleMinimize(e);
+                    }, { passive: false });
+                    
+                    newCollapseBtn.addEventListener('touchend', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // Avoid double-firing on devices that support both touch and mouse
+                        if (e.changedTouches && e.changedTouches.length > 0) {
+                            toggleMinimize(e);
+                        }
+                    }, { passive: false });
+                    
+                    // Prevent event bubbling to parent elements
+                    newCollapseBtn.addEventListener('touchstart', function(e) {
+                        e.stopPropagation();
+                    }, { passive: true });
+                    
+                    newCollapseBtn.addEventListener('mousedown', function(e) {
+                        e.stopPropagation();
+                    }, { passive: true });
+                }
+                
+                // Fix CLOSE button if it exists
+                if (closeBtn) {
+                    console.log(`Fixing close button for ${dialogId}`);
+                    
+                    // Make close button more touch-friendly
+                    closeBtn.style.minWidth = '44px';
+                    closeBtn.style.minHeight = '44px';
+                    closeBtn.style.display = 'flex';
+                    closeBtn.style.alignItems = 'center';
+                    closeBtn.style.justifyContent = 'center';
+                    closeBtn.style.fontSize = '18px';
+                    closeBtn.style.background = 'rgba(255,0,0,0.1)';
+                    closeBtn.style.borderRadius = '4px';
+                    closeBtn.style.cursor = 'pointer';
+                    
+                    // Remove existing broken event handlers and add new ones
+                    const newCloseBtn = closeBtn.cloneNode(true);
+                    closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+                    
+                    const closeDialog = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        console.log(`Closing dialog: ${dialogId}`);
+                        
+                        // Try to close using jQuery UI method first
+                        try {
+                            $(dialogContent).dialog('close');
+                        } catch (error) {
+                            console.log(`jQuery UI close failed for ${dialogId}, trying manual close`);
+                            // Fallback to manual close
+                            dialogWidget.style.display = 'none';
+                            
+                            // Try to trigger any close callback that might exist
+                            const closeEvent = new CustomEvent('dialogclose', { detail: { dialogId } });
+                            dialogContent.dispatchEvent(closeEvent);
+                        }
+                    };
+                    
+                    // Add event listeners for close functionality
+                    newCloseBtn.addEventListener('click', closeDialog, { passive: false });
+                    newCloseBtn.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        closeDialog(e);
+                    }, { passive: false });
+                }
+            });
+        };
+        
+        // Apply dialog improvements
         const dialogs = document.querySelectorAll('[id*="dialog"], [class*="dialog"], [id*="panel"], [class*="panel"]');
         dialogs.forEach(improveDialog);
 
+        // Fix jQuery UI dialog buttons
+        fixJQueryUIDialogButtons();
+
         // Watch for new dialogs
         const observer = new MutationObserver((mutations) => {
+            let hasNewDialogs = false;
+            
             mutations.forEach((mutation) => {
                 mutation.addedNodes.forEach((node) => {
                     if (node.nodeType === 1) { // Element node
-                        if (node.matches('[id*="dialog"], [class*="dialog"], [id*="panel"], [class*="panel"]')) {
+                        if (node.matches('[id*="dialog"], [class*="dialog"], [id*="panel"], [class*="panel"]') ||
+                            node.classList.contains('ui-dialog')) {
                             improveDialog(node);
+                            hasNewDialogs = true;
                         }
                         // Also check children
-                        const dialogs = node.querySelectorAll('[id*="dialog"], [class*="dialog"], [id*="panel"], [class*="panel"]');
-                        dialogs.forEach(improveDialog);
+                        const dialogs = node.querySelectorAll('[id*="dialog"], [class*="dialog"], [id*="panel"], [class*="panel"], .ui-dialog');
+                        if (dialogs.length > 0) {
+                            dialogs.forEach(improveDialog);
+                            hasNewDialogs = true;
+                        }
                     }
                 });
             });
+            
+            // If new dialogs were added, re-run the button fix
+            if (hasNewDialogs) {
+                setTimeout(fixJQueryUIDialogButtons, 100);
+            }
         });
 
         observer.observe(document.body, {
             childList: true,
             subtree: true
         });
+        
+        // Also run the fix after delays to catch any existing dialogs
+        setTimeout(fixJQueryUIDialogButtons, 1000);
+        setTimeout(fixJQueryUIDialogButtons, 3000);
+        setTimeout(fixJQueryUIDialogButtons, 5000);
+        
+        // Expose fix function globally for debugging
+        window.fixJQueryUIDialogButtons = fixJQueryUIDialogButtons;
+        
+        console.log('Dialog improvements applied successfully');
     }
 
     // Debug information for development
