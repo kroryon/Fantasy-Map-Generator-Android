@@ -92,10 +92,107 @@ ls "$env:ANDROID_HOME\build-tools"
 # ✅ Should list versions like: 30.0.3, 31.0.0, 32.0.0, etc.
 ```
 
-#### 🔨 Build Android APK
+##### Step 5: Configure local.properties (Critical for Android Builds)
 
-##### 🐛 Debug Version (for testing - automatically signed)
-```bash
+⚠️ **REQUIRED**: Android builds will fail without proper `local.properties` configuration!
+
+###### When to Create local.properties
+```powershell
+# Create local.properties AFTER adding Android platform
+# This file is automatically created in: android/local.properties
+```
+
+###### ⏰ Timing is Important
+1. **First run**: `npx cap add android` (creates `android/` folder)
+2. **Then create**: `android/local.properties` file 
+3. **Then run**: Android build commands
+
+###### 📝 Create local.properties File
+```powershell
+# Navigate to android folder and create local.properties
+cd android
+```
+
+**Create `android/local.properties` with this exact content:**
+```properties
+## This file must *NOT* be checked into Version Control Systems,
+# as it contains information specific to your local configuration.
+#
+# Location of the SDK. This is only used by Gradle.
+# For customization when using a Version Control System, please read the
+# header note.
+sdk.dir=C:/Users/YOUR_USERNAME/AppData/Local/Android/Sdk
+```
+
+###### 🎯 Replace YOUR_USERNAME
+```powershell
+# Find your actual username
+echo $env:USERNAME
+# Use the result to replace YOUR_USERNAME in the path above
+```
+
+###### ✅ Example local.properties Content
+For user `adryl`, the file should contain:
+```properties
+## This file must *NOT* be checked into Version Control Systems,
+# as it contains information specific to your local configuration.
+#
+# Location of the SDK. This is only used by Gradle.
+# For customization when using a Version Control System, please read the
+# header note.
+sdk.dir=C:/Users/adryl/AppData/Local/Android/Sdk
+```
+
+###### 🚨 Common Errors Without local.properties
+- `❌ SDK location not found`
+- `❌ Could not determine the dependencies of task ':app:compileDebugJavaWithJavac'`
+- `❌ Android SDK not found`
+- `❌ Gradle build failed`
+
+###### 🔧 Alternative: Automatic Creation
+```powershell
+# Automatically create local.properties with correct path
+echo "sdk.dir=C:/Users/$env:USERNAME/AppData/Local/Android/Sdk" > android/local.properties
+```
+
+#### 🔨 Build Android APK - Complete Step-by-Step Process
+
+⚠️ **IMPORTANT**: Follow these steps in exact order to avoid build errors!
+
+##### 📋 Step-by-Step Android Build Process
+
+###### Step 1: Create WWW Directory and Copy Files
+```powershell
+# Create the www directory that Capacitor needs
+npm run copy-www
+```
+- **What this does**: Creates `www/` folder and copies all web assets
+- **Critical**: Capacitor requires a `www/` directory with `index.html`
+- **Fixes error**: "Could not find the web assets directory: .\www"
+
+###### Step 2: Add Android Platform (First Time Only)
+```powershell
+# Add Android platform to the project
+npx cap add android
+```
+- **What this does**: Creates the `android/` folder with Android project structure
+- **When to run**: Only the first time or if `android/` folder doesn't exist
+- **Skip if**: `android/` folder already exists
+
+###### Step 3: Sync Web Assets with Android
+```powershell
+# Sync web files to Android project
+npx cap sync android
+```
+- **What this does**: Copies `www/` files to Android project assets
+- **Always run**: This command should be run before every build
+- **Updates**: Android app with latest web changes
+
+###### Step 4: Build the APK
+
+**🐛 Debug Version (for testing - automatically signed)**
+```powershell
+# Build debug APK
 npm run build-android
 ```
 - **Output**: `android/app/build/outputs/apk/debug/app-debug.apk`
@@ -103,8 +200,9 @@ npm run build-android
 - **Installable**: ✅ Ready to install on any Android device/emulator
 - **Use for**: Testing, BlueStacks, development
 
-##### 🚀 Release Version (for distribution - automatically signed)
-```bash
+**🚀 Release Version (for distribution - automatically signed)**
+```powershell
+# Build release APK  
 npm run build-android-release
 ```
 - **Output**: `android/app/build/outputs/apk/release/app-release.apk`
@@ -112,17 +210,360 @@ npm run build-android-release
 - **Installable**: ✅ Ready to install on any Android device
 - **Use for**: Distribution, sharing, production (not Play Store)
 
-##### 📝 What's Automatically Configured
-Both debug and release builds are **automatically signed** with keystores, so you don't need to worry about:
-- ❌ ~~Manual keystore creation~~
-- ❌ ~~Manual signing configuration~~
-- ❌ ~~Unsigned APK issues~~
+##### 🚀 Complete Build Command Sequence (Copy & Paste)
+```powershell
+# Complete Android build process (run all commands in sequence)
+npm run copy-www
+npx cap add android
+echo "sdk.dir=C:/Users/$env:USERNAME/AppData/Local/Android/Sdk" > android/local.properties
+npx cap sync android
+npm run build-android
+```
 
-The build process automatically:
-- ✅ Creates debug keystore if it doesn't exist
-- ✅ Configures signing for both debug and release
-- ✅ Generates installable APK files
-- ✅ Copies all mobile compatibility fixes
+##### ⚡ Quick Rebuild (After Making Changes)
+```powershell
+# Quick rebuild after making code changes (local.properties already exists)
+npm run copy-www
+npx cap sync android
+npm run build-android
+```
+
+##### 🔧 First Time Setup (Complete Process)
+```powershell
+# First time setup including local.properties creation
+npm run copy-www                    # Create www directory
+npx cap add android                 # Add Android platform  
+cd android                          # Navigate to android folder
+echo "## This file must *NOT* be checked into Version Control Systems,
+# as it contains information specific to your local configuration.
+#
+# Location of the SDK. This is only used by Gradle.
+# For customization when using a Version Control System, please read the
+# header note.
+sdk.dir=C:/Users/$env:USERNAME/AppData/Local/Android/Sdk" > local.properties
+cd ..                              # Return to project root
+npx cap sync android               # Sync web assets
+npm run build-android              # Build APK
+```
+
+#### 🔐 Android APK Auto-Signing Configuration
+
+Este proyecto está configurado para **auto-firmar automáticamente** tanto las APKs de debug como de release, eliminando los errores de APKs sin firmar.
+
+##### ✅ Configuración de Auto-Firma Implementada
+
+###### 🔧 Keystore de Debug Automático
+```gradle
+signingConfigs {
+    debug {
+        storeFile file('debug.keystore')
+        storePassword 'android'
+        keyAlias 'androiddebugkey'
+        keyPassword 'android'
+    }
+}
+```
+
+###### 🚀 Keystore de Release Auto-Firmado
+```gradle
+signingConfigs {
+    release {
+        // Usa el mismo keystore de debug para auto-firmar release
+        // Para producción en Play Store, deberías usar tu propio keystore
+        storeFile file('debug.keystore')
+        storePassword 'android'
+        keyAlias 'androiddebugkey'
+        keyPassword 'android'
+    }
+}
+```
+
+###### 📋 Configuración de BuildTypes
+```gradle
+buildTypes {
+    debug {
+        signingConfig signingConfigs.debug
+    }
+    release {
+        minifyEnabled false
+        proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        signingConfig signingConfigs.release  // ← Auto-firma habilitada
+    }
+}
+```
+
+##### 🔑 Generación Automática del Keystore
+
+El keystore de debug se genera automáticamente si no existe:
+
+```powershell
+# El proyecto está configurado para auto-generar el keystore
+# Ubicación: android/app/debug.keystore
+# Si no existe, se crea automáticamente durante el primer build
+```
+
+##### ⚙️ Proceso Completo de Auto-Firma
+
+###### Paso 1: Verificar Keystore Existe
+```powershell
+# El build verifica si existe android/app/debug.keystore
+# Si no existe, lo genera automáticamente
+```
+
+###### Paso 2: Configuración Automática
+```powershell
+# Durante el build:
+# 1. Gradle lee la configuración signingConfigs del build.gradle
+# 2. Aplica la firma automáticamente a debug y release
+# 3. Genera APKs firmadas e instalables
+```
+
+###### Paso 3: Resultado Final
+- ✅ **APK Debug**: `android/app/build/outputs/apk/debug/app-debug.apk` (Firmada)
+- ✅ **APK Release**: `android/app/build/outputs/apk/release/app-release.apk` (Firmada)
+
+##### 🆚 Diferencias Debug vs Release
+
+| Aspecto | Debug APK | Release APK |
+|---------|-----------|-------------|
+| **Firmado** | ✅ Automático | ✅ Automático |
+| **Instalable** | ✅ Sí | ✅ Sí |
+| **Depuración** | ✅ Habilitada | ❌ Deshabilitada |
+| **Tamaño** | Más grande | Optimizada |
+| **Uso** | Testing, desarrollo | Distribución |
+| **Minificación** | ❌ No | ✅ Opcional (actualmente deshabilitada) |
+
+##### 🚨 Importante para Distribución
+
+###### ⚠️ Para Testing y Distribución Personal
+- ✅ **La configuración actual es perfecta**
+- ✅ Las APKs están firmadas e instalables
+- ✅ Funciona en cualquier dispositivo Android
+- ✅ No requiere configuración adicional
+
+###### 🏪 Para Google Play Store (Producción)
+```gradle
+// Para Play Store necesitas crear tu propio keystore:
+keytool -genkey -v -keystore release-key.keystore -keyalg RSA -keysize 2048 -validity 10000 -alias release-key
+
+// Luego modificar build.gradle:
+release {
+    storeFile file('release-key.keystore')
+    storePassword 'tu-password-seguro'
+    keyAlias 'release-key'
+    keyPassword 'tu-key-password-seguro'
+}
+```
+
+##### 📝 Lo Que Está Configurado Automáticamente
+
+La configuración actual elimina estos problemas comunes:
+- ❌ ~~"APK not signed" errors~~
+- ❌ ~~"Installation failed" due to unsigned APK~~
+- ❌ ~~Manual keystore creation required~~
+- ❌ ~~Complex signing setup~~
+
+Y proporciona estas ventajas:
+- ✅ **Builds funcionan inmediatamente** sin configuración adicional
+- ✅ **APKs siempre firmadas** y listas para instalar
+- ✅ **Proceso simplificado** para desarrolladores
+- ✅ **Compatible con cualquier dispositivo** Android
+- ✅ **No requiere Android Studio** para firmar APKs
+
+##### 🔧 Comandos de Build con Auto-Firma
+
+```powershell
+# Debug APK (auto-firmada)
+npm run build-android
+# ✅ Resultado: android/app/build/outputs/apk/debug/app-debug.apk (FIRMADA)
+
+# Release APK (auto-firmada)  
+npm run build-android-release
+# ✅ Resultado: android/app/build/outputs/apk/release/app-release.apk (FIRMADA)
+
+# Verificar que la APK está firmada
+jarsigner -verify -verbose -certs android/app/build/outputs/apk/release/app-release.apk
+# ✅ Debería mostrar: "jar verified"
+```
+
+##### 🎯 Verificación de Firmado
+
+```powershell
+# Verificar que el keystore existe
+ls android/app/debug.keystore
+# ✅ Debería mostrar el archivo
+
+# Verificar información del keystore
+keytool -list -v -keystore android/app/debug.keystore -storepass android
+# ✅ Debería mostrar información del certificado
+```
+
+Este sistema de auto-firma garantiza que **todas las APKs generadas estén firmadas e instalables** sin requerir configuración manual compleja del desarrollador.
+
+##### 🏭 Creación de Keystore Personalizado para Producción
+
+Si planeas distribuir en Google Play Store o quieres tu propio keystore de release:
+
+###### Paso 1: Generar Keystore Personalizado
+```powershell
+# Navegar a la carpeta android/app
+cd android/app
+
+# Generar nuevo keystore para producción
+keytool -genkey -v -keystore my-release-key.keystore -keyalg RSA -keysize 2048 -validity 10000 -alias my-release-alias
+
+# Te pedirá:
+# - Password del keystore (recuérdalo!)
+# - Password del alias (recuérdalo!)
+# - Información personal (nombre, organización, etc.)
+```
+
+###### Paso 2: Modificar build.gradle para Keystore Personalizado
+```gradle
+// En android/app/build.gradle, reemplazar la sección signingConfigs:
+signingConfigs {
+    debug {
+        storeFile file('debug.keystore')
+        storePassword 'android'
+        keyAlias 'androiddebugkey'
+        keyPassword 'android'
+    }
+    release {
+        storeFile file('my-release-key.keystore')
+        storePassword 'TU_KEYSTORE_PASSWORD'
+        keyAlias 'my-release-alias'
+        keyPassword 'TU_ALIAS_PASSWORD'
+    }
+}
+```
+
+###### Paso 3: Variables de Entorno Seguras (Recomendado)
+```powershell
+# Crear archivo gradle.properties en android/app/ (NO commitear al git)
+echo "MYAPP_RELEASE_STORE_FILE=my-release-key.keystore
+MYAPP_RELEASE_KEY_ALIAS=my-release-alias
+MYAPP_RELEASE_STORE_PASSWORD=TU_KEYSTORE_PASSWORD
+MYAPP_RELEASE_KEY_PASSWORD=TU_ALIAS_PASSWORD" > android/app/gradle.properties
+```
+
+```gradle
+// Usar variables en build.gradle (más seguro):
+signingConfigs {
+    release {
+        if (project.hasProperty('MYAPP_RELEASE_STORE_FILE')) {
+            storeFile file(MYAPP_RELEASE_STORE_FILE)
+            storePassword MYAPP_RELEASE_STORE_PASSWORD
+            keyAlias MYAPP_RELEASE_KEY_ALIAS
+            keyPassword MYAPP_RELEASE_KEY_PASSWORD
+        }
+    }
+}
+```
+
+###### Paso 4: Añadir a .gitignore
+```bash
+# Añadir a .gitignore para NO commitear claves privadas:
+android/app/my-release-key.keystore
+android/app/gradle.properties
+*.keystore
+```
+
+###### Paso 5: Build con Keystore Personalizado
+```powershell
+# Build release con tu keystore personalizado
+npm run build-android-release
+# ✅ Resultado: APK firmada con TU keystore personal
+```
+
+###### ⚠️ Seguridad del Keystore
+- **NUNCA** commitees keystores o passwords al git
+- **GUARDA** una copia de seguridad del keystore en lugar seguro
+- **RECUERDA** los passwords (no se pueden recuperar)
+- **USA** el mismo keystore para todas las actualizaciones de la app
+
+###### 🔄 Proceso Completo de Keystore Personalizado
+```powershell
+# 1. Generar keystore
+cd android/app
+keytool -genkey -v -keystore my-release-key.keystore -keyalg RSA -keysize 2048 -validity 10000 -alias my-release-alias
+
+# 2. Crear gradle.properties con passwords
+echo "MYAPP_RELEASE_STORE_FILE=my-release-key.keystore
+MYAPP_RELEASE_KEY_ALIAS=my-release-alias  
+MYAPP_RELEASE_STORE_PASSWORD=tu_password_aqui
+MYAPP_RELEASE_KEY_PASSWORD=tu_key_password_aqui" > gradle.properties
+
+# 3. Modificar build.gradle para usar variables
+# (Ver código arriba)
+
+# 4. Añadir archivos a .gitignore
+echo "android/app/my-release-key.keystore
+android/app/gradle.properties" >> ../../.gitignore
+
+# 5. Build con keystore personalizado
+cd ../..
+npm run build-android-release
+
+# ✅ APK firmada con keystore personalizado lista para Play Store
+```
+
+### 🚨 Troubleshooting Android Build Issues
+
+#### ❌ "SDK location not found" Error
+**Problem**: Android build fails with SDK location error
+**Solution**: 
+```powershell
+# Check if local.properties exists
+ls android/local.properties
+
+# If missing, create it:
+echo "sdk.dir=C:/Users/$env:USERNAME/AppData/Local/Android/Sdk" > android/local.properties
+
+# Verify ANDROID_HOME is set correctly
+echo $env:ANDROID_HOME
+```
+
+#### ❌ "Could not find the web assets directory: .\www" Error  
+**Problem**: Capacitor can't find www directory
+**Solution**:
+```powershell
+# Create www directory and copy files
+npm run copy-www
+```
+
+#### ❌ "android platform has not been added" Error
+**Problem**: Android platform not initialized
+**Solution**:
+```powershell
+# Add Android platform
+npx cap add android
+```
+
+#### ❌ "Could not determine the dependencies of task" Error
+**Problem**: Usually missing local.properties or wrong Android SDK path
+**Solution**:
+```powershell
+# Verify Android SDK path exists
+ls "C:/Users/$env:USERNAME/AppData/Local/Android/Sdk"
+
+# Re-create local.properties with correct path
+echo "sdk.dir=C:/Users/$env:USERNAME/AppData/Local/Android/Sdk" > android/local.properties
+
+# Clean and rebuild
+cd android
+.\gradlew.bat clean
+cd ..
+npm run build-android
+```
+
+#### ✅ Verify local.properties is Correct
+```powershell
+# Check content of local.properties
+cat android/local.properties
+
+# Should show something like:
+# sdk.dir=C:/Users/YourUsername/AppData/Local/Android/Sdk
+```
 
 ## 📱 Mobile Compatibility Features
 
@@ -384,7 +825,25 @@ npm run clean-build
 
 #### 🔧 Common Problems and Solutions
 
-##### ❌ "SDK location not found" Error
+##### ❌ "Could not find the web assets directory: .\www" Error
+```powershell
+# SOLUTION: Create www directory first
+npm run copy-www
+npx cap sync android
+npm run build-android
+```
+**Why this happens**: Capacitor requires a `www/` directory with web assets before building
+**Prevention**: Always run `npm run copy-www` before Android builds
+
+##### ❌ "android platform has not been added" Error
+```powershell
+# SOLUTION: Add Android platform
+npx cap add android
+npx cap sync android
+npm run build-android
+```
+**Why this happens**: Android platform hasn't been initialized in the project
+**Prevention**: Run `npx cap add android` once per project setup
 ```bash
 # 1. Check environment variables are set
 echo $env:ANDROID_HOME
@@ -403,6 +862,67 @@ echo $env:JAVA_HOME
 npx cap add android
 npx cap sync android
 npm run build-android
+```
+
+##### 🔐 APK Signing Issues
+
+###### ❌ "APK not signed" or "Installation failed" Error
+```powershell
+# SOLUTION: El proyecto ya está configurado para auto-firma
+# Pero si persiste el problema:
+
+# 1. Verificar que debug.keystore existe
+ls android/app/debug.keystore
+
+# 2. Si no existe, regenerar keystore
+cd android/app
+keytool -genkey -v -keystore debug.keystore -keyalg RSA -keysize 2048 -validity 10000 -alias androiddebugkey -storepass android -keypass android -dname "CN=Android Debug,O=Android,C=US"
+
+# 3. Rebuild APK
+cd ../..
+npm run build-android
+```
+
+###### ❌ "Failed to read key from keystore" Error
+```powershell
+# SOLUTION: Keystore corrupto o passwords incorrectos
+# Regenerar keystore:
+cd android/app
+Remove-Item debug.keystore -ErrorAction Ignore
+keytool -genkey -v -keystore debug.keystore -keyalg RSA -keysize 2048 -validity 10000 -alias androiddebugkey -storepass android -keypass android -dname "CN=Android Debug,O=Android,C=US"
+cd ../..
+npm run build-android
+```
+
+###### ❌ "Certificate fingerprint mismatch" Error en dispositivo
+```powershell
+# SOLUTION: Dispositivo tiene una versión con diferente firma
+# Desinstalar la app existente primero:
+adb uninstall com.azgaar.fantasymapgenerator
+# Luego instalar la nueva:
+adb install android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+###### ✅ Verificar Firma de APK
+```powershell
+# Para verificar que la APK está correctamente firmada:
+jarsigner -verify -verbose -certs android/app/build/outputs/apk/debug/app-debug.apk
+# Debería mostrar: "jar verified."
+
+# Para release APK:
+jarsigner -verify -verbose -certs android/app/build/outputs/apk/release/app-release.apk
+# Debería mostrar: "jar verified."
+```
+
+###### 📋 Información del Keystore
+```powershell
+# Ver información del keystore debug:
+keytool -list -v -keystore android/app/debug.keystore -storepass android
+
+# Verificar alias y passwords:
+# Alias: androiddebugkey
+# Store password: android  
+# Key password: android
 ```
 
 ##### ❌ Gradle wrapper permission errors
@@ -620,7 +1140,7 @@ This ensures your APK works across different Android environments before distrib
 ## 🔄 Complete Build Workflow
 
 ### 🆕 First Time Setup (New Developer)
-```bash
+```powershell
 # 1. Clone the repository
 git clone <repository-url>
 cd Fantasy-Map-Generator-Ck3
@@ -637,12 +1157,17 @@ npm run electron
 #    - Set ANDROID_HOME and JAVA_HOME environment variables
 #    - Restart PowerShell
 
-# 5. Test Android build (after Android setup)
+# 5. Prepare Android build environment
+npm run copy-www
+npx cap add android
+
+# 6. Test Android build (after Android setup)
+npx cap sync android
 npm run build-android
 ```
 
 ### 🚀 Production Build Process
-```bash
+```powershell
 # 1. Clean any previous builds
 npm run clean
 
@@ -652,23 +1177,29 @@ npm run build-desktop
 #    - dist/fantasy-map-generator-win32-x64/fantasy-map-generator.exe
 #    - dist/fantasy-map-generator-linux-x64/fantasy-map-generator
 
-# 3. Build Android APKs
+# 3. Prepare Android build environment
+npm run copy-www
+npx cap sync android
+
+# 4. Build Android APKs
 npm run build-android           # Debug version for testing
 npm run build-android-release   # Release version for distribution
 # ✅ Outputs:
 #    - android/app/build/outputs/apk/debug/app-debug.apk
 #    - android/app/build/outputs/apk/release/app-release.apk
 
-# 4. All builds complete! 🎉
+# 5. All builds complete! 🎉
 ```
 
 ### 🧪 Testing Workflow
-```bash
+```powershell
 # Test desktop version
 npm run electron
 # ✅ Should open app window on desktop
 
-# Test Android in BlueStacks
+# Test Android in BlueStacks (complete process)
+npm run copy-www
+npx cap sync android
 npm run build-android
 # Then drag app-debug.apk into BlueStacks
 # ✅ Should install and run with working touch events
@@ -679,7 +1210,7 @@ npm run build-android
 ```
 
 ### 🔧 Development Workflow
-```bash
+```powershell
 # Make code changes to source files
 # Then test changes:
 
@@ -687,17 +1218,19 @@ npm run build-android
 npm run electron                # Quick test in development
 
 # For mobile changes:
+npm run copy-www                # Copy updated files
+npx cap sync android            # Sync to Android project
 npm run build-android           # Build new APK
 # Install in BlueStacks/device to test
 
 # Before committing:
 npm run build-desktop           # Verify desktop builds work
-npm run build-android           # Verify Android builds work
+npm run copy-www && npx cap sync android && npm run build-android  # Verify Android builds work
 # ✅ All builds should succeed before git push
 ```
 
 ### 🚨 Troubleshooting Workflow
-```bash
+```powershell
 # If any build fails:
 
 # 1. Clean everything
@@ -712,12 +1245,21 @@ java -version
 Remove-Item -Recurse -Force node_modules -ErrorAction Ignore
 npm install
 
-# 4. Try building again
+# 4. Recreate www directory and Android platform
+npm run copy-www
+npx cap add android
+
+# 5. Try building again
 npm run build-desktop
+npx cap sync android
 npm run build-android
 
-# 5. If Android still fails, regenerate platform
-Remove-Item -Recurse -Force android -ErrorAction Ignore  
+# 6. If Android still fails, complete regeneration
+Remove-Item -Recurse -Force android -ErrorAction Ignore
+Remove-Item -Recurse -Force www -ErrorAction Ignore
+npm run copy-www
+npx cap add android
+npx cap sync android
 npm run build-android
 ```
 
@@ -952,6 +1494,85 @@ If you encounter mobile-related problems:
 5. **Ensure files are copied** to www/ folder during build
 
 This mobile compatibility layer ensures the Fantasy Map Generator works smoothly across all platforms while maintaining the original functionality.
+
+## 🚀 Resumen Rápido - Compilación de Release
+
+### ⚡ Comandos Esenciales para Compilar Release APK
+
+```powershell
+# 1. Setup inicial (solo primera vez)
+npm install
+npm run copy-www
+npx cap add android
+echo "sdk.dir=C:/Users/$env:USERNAME/AppData/Local/Android/Sdk" > android/local.properties
+
+# 2. Compilar APK Release (auto-firmada)
+npm run copy-www
+npx cap sync android
+npm run build-android-release
+
+# 🎯 Resultado: android/app/build/outputs/apk/release/app-release.apk
+```
+
+### 🔐 ¿Qué Se Configuró Automáticamente?
+
+- ✅ **Auto-firma automática** para debug y release
+- ✅ **Keystore de debug** se crea automáticamente
+- ✅ **Release APK firmada** lista para instalar
+- ✅ **Compatible con cualquier dispositivo** Android
+- ✅ **No requiere configuración manual** de keystores
+
+### 📝 Lo Que NUNCA Necesitas Hacer Manualmente
+
+- ❌ ~~Crear keystores manualmente~~
+- ❌ ~~Configurar signing configs~~
+- ❌ ~~Firmar APKs con jarsigner~~
+- ❌ ~~Instalar certificados~~
+- ❌ ~~Manejar passwords complejos~~
+
+### 🎯 Para Distribución en Play Store
+
+Si quieres publicar en Google Play Store, sigue estos pasos adicionales:
+
+```powershell
+# 1. Crear keystore personalizado
+cd android/app
+keytool -genkey -v -keystore my-release-key.keystore -keyalg RSA -keysize 2048 -validity 10000 -alias my-release-alias
+
+# 2. Modificar build.gradle para usar tu keystore
+# (Ver sección "Creación de Keystore Personalizado" arriba)
+
+# 3. Build con keystore personalizado
+npm run build-android-release
+```
+
+### ✅ Verificación Final
+
+```powershell
+# Verificar que la APK está firmada correctamente
+jarsigner -verify -verbose -certs android/app/build/outputs/apk/release/app-release.apk
+# ✅ Debería mostrar: "jar verified."
+
+# Instalar en dispositivo/emulador
+adb install android/app/build/outputs/apk/release/app-release.apk
+# ✅ Debería instalar sin errores
+```
+
+### 🚨 Si Hay Problemas
+
+```powershell
+# Regenerar todo desde cero
+npm run clean
+Remove-Item -Recurse -Force android -ErrorAction Ignore
+Remove-Item -Recurse -Force www -ErrorAction Ignore
+npm run copy-www
+npx cap add android
+echo "sdk.dir=C:/Users/$env:USERNAME/AppData/Local/Android/Sdk" > android/local.properties
+npx cap sync android
+npm run build-android-release
+```
+
+**¡Eso es todo!** Tu APK de release está lista para distribuir. 🎉
 ```bash
 npm run build-android
 ```
