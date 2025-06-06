@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
 
     <title>Azgaar's Fantasy Map Generator</title>
     <meta name="application-name" content="Azgaar's Fantasy Map Generator" />
@@ -139,13 +139,14 @@
     </style>
 
     <link rel="preload" href="index.css?v=1.106.3" as="style" onload="this.onload=null; this.rel='stylesheet'" />
-    <link rel="preload" href="icons.css" as="style" onload="this.onload=null; this.rel='stylesheet'" />
-    <link
+    <link rel="preload" href="icons.css" as="style" onload="this.onload=null; this.rel='stylesheet'" />    <link
       rel="preload"
       href="libs/jquery-ui.css?v=1.106.5"
       as="style"
       onload="this.onload=null; this.rel='stylesheet'"
-    />
+    />      <!-- Mobile Compatibility Script -->
+    <script src="mobile-compatibility.js"></script>
+    <script src="azgaar-touch-enhancements-clean.js"></script>
   </head>
   <body>
     <svg

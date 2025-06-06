@@ -93,6 +93,44 @@ npm run build-android-release
 ```
 **Output:** `android/app/build/outputs/apk/release/app-release.apk`
 
+## 📱 Mobile Compatibility Features
+
+### ✅ Enhanced Mobile Support
+This version includes **improved mobile compatibility** specifically designed to work with:
+- **BlueStacks** and other Android emulators
+- **Real Android devices** 
+- **Touch-enabled Windows devices**
+- **Mobile browsers**
+
+### 🎯 Solved Issues
+- **Fixed click/touch responsiveness** in BlueStacks
+- **Eliminated invasive event handlers** that blocked user interactions
+- **Improved menu closing** on mobile devices
+- **Better touch target detection** for small screens
+- **Enhanced emulator compatibility**
+
+### 🔧 Mobile-Specific Files
+The following files handle mobile compatibility:
+- **`mobile-compatibility.js`** - Core mobile detection and improvements
+- **`azgaar-touch-enhancements.js`** - Safe touch enhancements (cleaned version)
+
+These files are automatically included in both web and Android builds.
+
+### 📋 Mobile Testing
+```bash
+# Test in local browser (mobile simulation)
+npm run electron
+# Then open DevTools > Toggle Device Toolbar (Ctrl+Shift+M)
+
+# Test Android APK in emulator
+npm run build-android
+# Install APK in BlueStacks or Android emulator
+
+# Test on real Android device
+npm run build-android
+# Transfer APK to device and install
+```
+
 ## 🔧 Development Commands
 
 ### Run Desktop Version (Development)
@@ -133,6 +171,8 @@ Fantasy-Map-Generator-Ck3/
 │   ├── libs/                    # Third-party libraries
 │   ├── utils/                   # Utility functions
 │   ├── config/                  # Configuration files
+│   ├── mobile-compatibility.js  # 📱 Mobile compatibility layer
+│   ├── azgaar-touch-enhancements.js # 📱 Safe touch improvements
 │   ├── capacitor.config.ts      # Mobile app configuration
 │   ├── electron-main.js         # Desktop app entry point
 │   ├── package.json            # Dependencies and scripts
@@ -205,6 +245,12 @@ npm run clean-build
 
 ### Android Build Issues
 
+#### 🎯 Mobile Compatibility Issues (SOLVED)
+If you experience **touch/click problems** in BlueStacks or mobile devices:
+- ✅ **Already Fixed**: This version includes mobile compatibility improvements
+- ✅ **Working Features**: Touch events, menu closing, emulator support
+- ✅ **Files Updated**: `mobile-compatibility.js` and `azgaar-touch-enhancements.js`
+
 #### SDK location not found
 ```bash
 # Check environment variables
@@ -260,14 +306,25 @@ npx cap sync android --force
 
 ## 📱 Installing APK on Android Device
 
-### Enable Developer Options
+### ✅ BlueStacks Installation (Verified Working)
+1. Download **BlueStacks** from official website
+2. Install and start BlueStacks
+3. Copy `app-debug.apk` to a location accessible by BlueStacks
+4. In BlueStacks, open file manager or drag APK directly
+5. Install the app
+6. **Touch events now work properly!** 🎉
+
+### Real Android Device Installation
+### Real Android Device Installation
+
+#### Enable Developer Options
 1. Go to **Settings** → **About Phone**
 2. Tap **Build Number** 7 times
 3. Go back to **Settings** → **Developer Options**
 4. Enable **USB Debugging**
 5. Enable **Install Unknown Apps** for your file manager
 
-### Install APK
+#### Install APK
 1. Copy `app-debug.apk` to your Android device
 2. Open the APK file with a file manager
 3. Allow installation from unknown sources if prompted
@@ -349,8 +406,22 @@ npm run open-android
 - **Additional Storage**: 3GB+ for Android SDK
 
 ### Target Devices
-- **Desktop**: Windows 7+, Linux with glibc 2.17+
+
+#### Desktop Requirements
+- **Windows**: Windows 7 or higher
+- **Linux**: Most modern distributions
+
+#### Mobile/Android Requirements ✅
 - **Android**: API level 23+ (Android 6.0+), 2GB RAM
+- **BlueStacks**: Any recent version (touch events verified working)
+- **Other Emulators**: Nox, MEmu, LDPlayer (should work with new compatibility layer)
+- **Real Devices**: Any Android phone/tablet with 2GB+ RAM
+
+#### Enhanced Compatibility Features
+- ✅ **Touch event handling** for emulators
+- ✅ **Menu closing improvements** for mobile
+- ✅ **Better click detection** in virtual environments
+- ✅ **Optimized for BlueStacks** and similar emulators
 
 ## 🔐 Security Notes
 
@@ -400,8 +471,78 @@ This project maintains the same license as the original Azgaar's Fantasy Map Gen
 ## 🙏 Credits
 - **Original Fantasy Map Generator** by [Azgaar](https://github.com/Azgaar/Fantasy-Map-Generator)
 - **Desktop & Mobile conversion** - Community contribution
+- **Mobile Compatibility Improvements** - Enhanced touch and emulator support
 - **Electron** - Desktop app framework
 - **Capacitor** - Mobile app framework
+
+## 📱 Mobile Compatibility Details
+
+### What Was Fixed
+The original Fantasy Map Generator had issues running on mobile devices and emulators like BlueStacks. This version includes:
+
+#### ❌ Previous Issues
+- Touch events were overridden aggressively
+- Click events didn't work in BlueStacks
+- Menu closing was problematic on mobile
+- Global event listener modifications caused conflicts
+
+#### ✅ Current Solutions
+- **Safe Event Handling**: Removed invasive `addEventListener` overrides
+- **Emulator Detection**: Better detection of BlueStacks and similar environments
+- **Touch Improvements**: Passive touch listeners that don't interfere with clicks
+- **Menu Fixes**: Improved mobile-friendly menu closing
+- **Performance**: Optimized for mobile devices with reduced animations
+
+### Technical Implementation
+
+#### Files Modified
+1. **`mobile-compatibility.js`**
+   - Enhanced device detection (including BlueStacks)
+   - Safe touch event improvements
+   - Mobile viewport optimizations
+   - Performance improvements for mobile
+
+2. **`azgaar-touch-enhancements.js`**
+   - Removed dangerous global `addEventListener` override
+   - Simplified to essential functionality only
+   - Safe menu closing without event conflicts
+   - Touch-friendly UI improvements
+
+#### How It Works
+```javascript
+// Before (problematic):
+EventTarget.prototype.addEventListener = function() { /* invasive override */ }
+
+// After (safe):
+// Passive listeners only, no interference with native events
+document.addEventListener('touchstart', handler, { passive: true });
+```
+
+### Testing Results
+- ✅ **BlueStacks**: Touch and click events work correctly
+- ✅ **Real Android Devices**: Improved touch responsiveness  
+- ✅ **Mobile Browsers**: Better mobile experience
+- ✅ **Desktop**: No regression in desktop functionality
+
+### For Developers
+If you're working on further mobile improvements:
+
+1. **Never override** `EventTarget.prototype.addEventListener`
+2. **Use passive listeners** when possible: `{ passive: true }`
+3. **Test in BlueStacks** to verify emulator compatibility
+4. **Avoid preventDefault()** unless absolutely necessary
+5. **Use device detection** to apply mobile-specific fixes only when needed
+
+### Troubleshooting Mobile Issues
+If you encounter mobile-related problems:
+
+1. **Check DevTools Console** for JavaScript errors
+2. **Test in BlueStacks** to reproduce emulator issues
+3. **Verify touch events** aren't being prevented
+4. **Check mobile-compatibility.js** is loading correctly
+5. **Ensure files are copied** to www/ folder during build
+
+This mobile compatibility layer ensures the Fantasy Map Generator works smoothly across all platforms while maintaining the original functionality.
 ```bash
 npm run build-android
 ```

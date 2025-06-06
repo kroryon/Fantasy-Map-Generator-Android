@@ -18,7 +18,7 @@
     
     "copy-www": "npm run create-www && npm run copy-files",
     "create-www": "if not exist www mkdir www",
-    "copy-files": "copy index.html www\\ && copy main.js www\\ && copy index.css www\\ && copy icons.css www\\ && copy sw.js www\\ && copy versioning.js www\\ && copy manifest.webmanifest www\\ && xcopy charges www\\charges\\ /E /I /Y && xcopy components www\\components\\ /E /I /Y && xcopy config www\\config\\ /E /I /Y && xcopy heightmaps www\\heightmaps\\ /E /I /Y && xcopy images www\\images\\ /E /I /Y && xcopy libs www\\libs\\ /E /I /Y && xcopy modules www\\modules\\ /E /I /Y && xcopy styles www\\styles\\ /E /I /Y && xcopy utils www\\utils\\ /E /I /Y",
+    "copy-files": "copy index.html www\\ && copy main.js www\\ && copy index.css www\\ && copy icons.css www\\ && copy sw.js www\\ && copy versioning.js www\\ && copy manifest.webmanifest www\\ && copy mobile-compatibility.js www\\ && copy azgaar-touch-enhancements.js www\\ && xcopy charges www\\charges\\ /E /I /Y && xcopy components www\\components\\ /E /I /Y && xcopy config www\\config\\ /E /I /Y && xcopy heightmaps www\\heightmaps\\ /E /I /Y && xcopy images www\\images\\ /E /I /Y && xcopy libs www\\libs\\ /E /I /Y && xcopy modules www\\modules\\ /E /I /Y && xcopy styles www\\styles\\ /E /I /Y && xcopy utils www\\utils\\ /E /I /Y",
       "clean": "if exist dist rmdir /s /q dist && if exist android rmdir /s /q android && if exist www rmdir /s /q www",
     "clean-build": "npm run clean && npm run build-desktop",
     "test-scripts": "echo Testing all build scripts... && npm run copy-www && echo WWW copy completed!",
