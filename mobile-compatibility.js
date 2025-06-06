@@ -25,24 +25,30 @@
     // Mobile-specific improvements (including emulators)
     if (isMobile || isCapacitor || isEmulator) {
         initMobileCompatibility();
-    }function initMobileCompatibility() {
+    }    function initMobileCompatibility() {
         // 1. Improve viewport
         improveViewport();
         
-        // 2. Add mobile-specific CSS
+        // 2. Add mobile-specific CSS (enhanced for scrolling)
         addMobileCSSFixes();
         
-        // 3. Fix touch events (IMPORTANT: this was missing!)
+        // 3. Fix touch events
         fixTouchEvents();
         
-        // 4. Fix menu closing issues (lightweight)
+        // 4. Fix menu closing issues
         fixMenuClosing();
         
-        // 5. Improve performance
+        // 5. Improve scrolling (enhanced)
+        fixScrolling();
+        
+        // 6. Improve performance
         improvePerformance();
         
-        console.log('Mobile compatibility enhancements applied');
-    }    function fixTouchEvents() {
+        // 7. Enhance dialogs (enhanced)
+        improveDialogs();
+        
+        console.log('Mobile compatibility enhancements applied - enhanced version');
+    }function fixTouchEvents() {
         // Enhanced touch support with BlueStacks compatibility
         console.log('Fixing touch events for mobile/emulator compatibility...');
         
@@ -260,14 +266,39 @@
 
     function addMobileCSSFixes() {
         const mobileCSS = document.createElement('style');
-        mobileCSS.textContent = `
-            /* Mobile-specific improvements */
+        mobileCSS.textContent = `            /* Mobile-specific improvements - HEAVILY REDUCED for Samsung S24 */
             @media (max-width: 768px) {
-                /* Improve touch targets */
+                /* Improve touch targets - VERY SMALL for mobile display */
                 button, .icon, [onclick] {
-                    min-height: 44px !important;
-                    min-width: 44px !important;
-                    padding: 8px !important;
+                    min-height: 24px !important;
+                    min-width: 24px !important;
+                    padding: 2px !important;
+                    font-size: 11px !important;
+                }
+                
+                /* Specific menu element fixes - MUCH SMALLER for S24 */
+                .menu button, .dialog button, .panel button {
+                    min-height: 20px !important;
+                    min-width: auto !important;
+                    padding: 1px 4px !important;
+                    font-size: 10px !important;
+                    line-height: 1.1 !important;
+                    margin: 1px !important;
+                }
+                
+                /* Dropdown and select improvements - REDUCED */
+                .menu select, .dialog select, .panel select {
+                    min-height: 20px !important;
+                    padding: 1px 3px !important;
+                    font-size: 10px !important;
+                    margin: 1px !important;
+                }
+                
+                /* Icon size adjustments - SMALLER */
+                .menu .icon, .dialog .icon, .panel .icon {
+                    min-height: 18px !important;
+                    min-width: 18px !important;
+                    padding: 1px !important;
                 }
                 
                 /* Better select boxes on mobile */
@@ -283,22 +314,35 @@
                     padding: 12px !important;
                     border-radius: 8px !important;
                 }
-                
-                /* Improve dialog positioning */
-                .dialog, .panel, .menu {
+                  /* Improve dialog positioning - enhanced for better scrolling */
+                .dialog, .panel, .menu, .ui-dialog {
                     max-width: 95vw !important;
                     max-height: 90vh !important;
-                    overflow-y: auto !important;
+                    overflow: auto !important;
+                    -webkit-overflow-scrolling: touch !important;
+                    overscroll-behavior: contain !important;
                 }
-                
-                /* Better scrollbars */
+                  /* Better scrollbars - enhanced for touch */
                 ::-webkit-scrollbar {
-                    width: 12px !important;
+                    width: 14px !important;
+                    height: 14px !important;
                 }
                 
                 ::-webkit-scrollbar-thumb {
-                    background: rgba(0,0,0,0.3) !important;
-                    border-radius: 6px !important;
+                    background: rgba(0,0,0,0.4) !important;
+                    border-radius: 7px !important;
+                    border: 2px solid transparent !important;
+                    background-clip: content-box !important;
+                    min-height: 30px !important;
+                }
+                
+                ::-webkit-scrollbar-thumb:hover {
+                    background: rgba(0,0,0,0.6) !important;
+                }
+                
+                ::-webkit-scrollbar-track {
+                    background: rgba(0,0,0,0.1) !important;
+                    border-radius: 7px !important;
                 }
                 
                 /* Prevent text selection issues */
@@ -319,14 +363,99 @@
                     -webkit-text-size-adjust: 100% !important;
                     -webkit-overflow-scrolling: touch !important;
                 }
-                
-                /* Improve close buttons */
+                  /* Improve close buttons - REDUCED size */
                 .close, .icon-times {
-                    min-width: 48px !important;
-                    min-height: 48px !important;
+                    min-width: 32px !important;
+                    min-height: 32px !important;
                     display: flex !important;
                     align-items: center !important;
                     justify-content: center !important;
+                }}
+              /* High-DPI device specific fixes (Samsung S24, etc.) - ULTRA REDUCED */
+            @media screen and (min-device-pixel-ratio: 2.5) {
+                /* Extremely small sizes for very high-DPI devices like S24 */
+                .menu, .dialog, .panel {
+                    font-size: 9px !important;
+                    line-height: 1.1 !important;
+                }
+                
+                .menu button, .dialog button, .panel button {
+                    min-height: 16px !important;
+                    padding: 0px 2px !important;
+                    font-size: 8px !important;
+                    border-radius: 1px !important;
+                    margin: 0px !important;
+                }
+                
+                .menu select, .dialog select, .panel select {
+                    min-height: 16px !important;
+                    padding: 0px 2px !important;
+                    font-size: 8px !important;
+                    margin: 0px !important;
+                }
+                
+                .menu .icon, .dialog .icon, .panel .icon {
+                    min-height: 14px !important;
+                    min-width: 14px !important;
+                    padding: 0px !important;
+                }
+                
+                /* Ultra-compact close buttons for high-DPI */
+                .close, .icon-times {
+                    min-width: 20px !important;
+                    min-height: 20px !important;
+                    font-size: 8px !important;
+                }
+                
+                /* Reduce spacing and margins everywhere */
+                .menu *, .dialog *, .panel * {
+                    margin: 0px !important;
+                    padding: 1px !important;
+                }
+                
+                /* Make containers more compact */
+                .menu, .dialog, .panel {
+                    padding: 2px !important;
+                    max-width: 98vw !important;
+                    max-height: 95vh !important;
+                }            }
+            
+            /* Additional ultra-compact rules for all mobile devices */
+            @media (max-width: 480px) {
+                /* Force ultra-compact layout for small screens */
+                div, span, label, input, select, button {
+                    font-size: 9px !important;
+                    line-height: 1.0 !important;
+                }
+                
+                /* Make all interactive elements tiny */
+                button, select, input[type="button"], input[type="submit"] {
+                    min-height: 18px !important;
+                    min-width: auto !important;
+                    padding: 1px 3px !important;
+                    font-size: 9px !important;
+                    border-width: 1px !important;
+                }
+                
+                /* Compact dropdown lists */
+                option {
+                    font-size: 9px !important;
+                    padding: 1px !important;
+                }
+                
+                /* Reduce all margins and paddings */
+                .menu > *, .dialog > *, .panel > * {
+                    margin: 1px !important;
+                    padding: 1px !important;
+                }
+                
+                /* Force containers to be more compact */
+                .menu, .dialog, .panel, [role="dialog"] {
+                    padding: 3px !important;
+                    border-width: 1px !important;
+                    max-width: 95vw !important;
+                    max-height: 90vh !important;
+                    overflow: auto !important;
                 }
             }
             
@@ -338,18 +467,27 @@
             }
         `;
         document.head.appendChild(mobileCSS);
-    }
-
-    function fixScrolling() {
-        // Improve scroll behavior on mobile
+    }    function fixScrolling() {
+        // Improve scroll behavior on mobile - enhanced for universal compatibility
         document.body.style.overscrollBehavior = 'contain';
         
-        // Fix momentum scrolling
-        const scrollableElements = document.querySelectorAll('.scrollable, .panel, .dialog, .menu');
+        // Fix momentum scrolling for existing elements
+        const scrollableElements = document.querySelectorAll('.scrollable, .panel, .dialog, .menu, .ui-dialog, [role="dialog"]');
         scrollableElements.forEach(element => {
             element.style.webkitOverflowScrolling = 'touch';
             element.style.overflowY = 'auto';
+            element.style.overscrollBehavior = 'contain';
         });
+        
+        // Ensure smooth scrolling for the entire page
+        document.documentElement.style.scrollBehavior = 'smooth';
+        
+        // Add momentum scrolling support for touch devices
+        if ('ontouchstart' in window) {
+            document.addEventListener('touchmove', function(e) {
+                // Allow smooth scrolling, don't prevent default
+            }, { passive: true });
+        }
     }
 
     function improveDialogs() {

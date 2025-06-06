@@ -132,6 +132,7 @@ This version includes **improved mobile compatibility** specifically designed to
 - **Real Android devices** 
 - **Touch-enabled Windows devices**
 - **Mobile browsers**
+- **Small screens and varying resolutions**
 
 ### 🎯 Solved Issues
 - **Fixed click/touch responsiveness** in BlueStacks
@@ -139,13 +140,42 @@ This version includes **improved mobile compatibility** specifically designed to
 - **Improved menu closing** on mobile devices
 - **Better touch target detection** for small screens
 - **Enhanced emulator compatibility**
+- **🆕 Comprehensive scroll system** for all menus and panels
+- **🆕 Smart menu sizing** that adapts to screen dimensions
+- **🆕 Fixed Options menu overflow** on mobile devices
+- **🆕 Consistent scroll behavior** across all UI elements
 
 ### 🔧 Mobile-Specific Files
-The following files handle mobile compatibility:
+The following files handle mobile compatibility and are automatically included in both web and Android builds:
 - **`mobile-compatibility.js`** - Core mobile detection and improvements
 - **`azgaar-touch-enhancements.js`** - Safe touch enhancements (cleaned version)
+- **`mobile-dialog-scroll-fix.js`** - Scroll fixes for dialogs and popups
+- **`universal-scroll-fix.js`** - Comprehensive scroll system for all UI elements
+- **`mobile-options-fix.css`** - CSS fixes for mobile menu scrolling and sizing
 
-These files are automatically included in both web and Android builds.
+### 📱 Enhanced Scroll System
+This version includes a **comprehensive scroll system** specifically designed for mobile devices:
+
+#### ✅ Scroll Features
+- **Automatic scroll detection** for all menus and panels
+- **Smart height limits** to prevent menus from exceeding screen size
+- **Touch-friendly scrollbars** with proper styling
+- **Android WebView optimization** for Capacitor builds
+- **Responsive design** that adapts to different screen sizes
+
+#### 🎯 Fixed Menu Issues
+- **Options menu scrolling** - Long menus now scroll properly instead of being cut off
+- **Tab content scrolling** - All tab contents are scrollable when needed
+- **Dropdown sizing** - Dropdowns maintain reasonable sizes on mobile
+- **Consistent behavior** - All menus maintain the same size and scroll behavior
+
+#### 🔧 Technical Implementation
+The scroll system works by:
+1. **Detecting mobile devices** and small screens automatically
+2. **Applying max-height limits** to prevent overflow
+3. **Enabling scroll** with `overflow-y: auto` and `-webkit-overflow-scrolling: touch`
+4. **Styling scrollbars** for better visibility on touch devices
+5. **Monitoring dynamic content** and applying fixes automatically
 
 ### 📋 Mobile Testing
 ```bash
@@ -160,6 +190,13 @@ npm run build-android
 # Test on real Android device
 npm run build-android
 # Transfer APK to device and install
+
+# Test scroll functionality specifically
+# 1. Open Options menu
+# 2. Verify menu doesn't exceed screen height
+# 3. Test scrolling in long menus (Options tab)
+# 4. Verify dropdowns are reasonably sized
+# 5. Test all tabs for scroll behavior
 ```
 
 ## 🔧 Development Commands
@@ -204,6 +241,9 @@ Fantasy-Map-Generator-Ck3/
 │   ├── config/                  # Configuration files
 │   ├── mobile-compatibility.js  # 📱 Mobile compatibility layer
 │   ├── azgaar-touch-enhancements.js # 📱 Safe touch improvements
+│   ├── mobile-dialog-scroll-fix.js # 📱 Dialog scroll fixes
+│   ├── universal-scroll-fix.js  # 📱 Universal scroll system
+│   ├── mobile-options-fix.css   # 📱 Mobile menu CSS fixes
 │   ├── capacitor.config.ts      # Mobile app configuration
 │   ├── electron-main.js         # Desktop app entry point
 │   ├── package.json            # Dependencies and scripts
@@ -657,12 +697,18 @@ Before distributing your builds:
 - [ ] APK installs successfully on real Android device
 - [ ] Touch/mouse events work correctly
 - [ ] UI renders properly on mobile screen
+- [ ] **Menu scrolling works** - Options menu and other long menus scroll properly
+- [ ] **Menu sizing is correct** - Menus don't exceed screen boundaries
+- [ ] **Dropdowns are reasonably sized** - Select elements aren't oversized
 - [ ] All features work (especially touch-based interactions)
 - [ ] App doesn't crash on startup or during use
 
 #### ✅ Mobile Compatibility Verification
 - [ ] Touch events work in BlueStacks (**critical fix**)
 - [ ] Menu closing works on mobile
+- [ ] **Menu scrolling works properly** - No menus exceed screen height
+- [ ] **Options menu scroll** - Long Options tab content is scrollable
+- [ ] **Consistent menu sizes** - All menus maintain proper dimensions
 - [ ] Drag/pan/zoom gestures work
 - [ ] No invasive event handler conflicts
 - [ ] Performance is acceptable on mobile devices

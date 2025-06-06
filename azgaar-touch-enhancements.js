@@ -64,14 +64,14 @@ function enhanceTooltipsSafe() {
 function addMobileCSSEnhancements() {
     // Add mobile-specific CSS improvements
     const azgaarMobileCSS = document.createElement('style');
-    azgaarMobileCSS.textContent = `
-        @media (max-width: 768px) {
-            /* Better menu panels */
-            #menu, .panel, [id$="Menu"], [id$="Panel"] {
+    azgaarMobileCSS.textContent = `        @media (max-width: 768px) {
+            /* Better menu panels - enhanced for universal scrolling */
+            #menu, .panel, [id$="Menu"], [id$="Panel"], .ui-dialog, .dialog {
                 max-width: 95vw !important;
                 max-height: 90vh !important;
-                overflow-y: auto !important;
+                overflow: auto !important;
                 -webkit-overflow-scrolling: touch !important;
+                overscroll-behavior: contain !important;
             }
             
             /* Improve buttons in toolbars */
@@ -94,16 +94,28 @@ function addMobileCSSEnhancements() {
                 min-height: 48px !important;
                 font-size: 18px !important;
             }
-            
-            /* Better scrollbars */
+              /* Better scrollbars - enhanced for touch */
             ::-webkit-scrollbar {
-                width: 12px !important;
-                height: 12px !important;
+                width: 14px !important;
+                height: 14px !important;
+                background-color: rgba(0,0,0,0.1) !important;
             }
             
             ::-webkit-scrollbar-thumb {
-                background: rgba(255, 255, 255, 0.3) !important;
-                border-radius: 6px !important;
+                background: rgba(255, 255, 255, 0.4) !important;
+                border-radius: 7px !important;
+                border: 2px solid transparent !important;
+                background-clip: content-box !important;
+                min-height: 30px !important;
+            }
+            
+            ::-webkit-scrollbar-thumb:hover {
+                background: rgba(255, 255, 255, 0.6) !important;
+            }
+            
+            ::-webkit-scrollbar-track {
+                background: rgba(0,0,0,0.05) !important;
+                border-radius: 7px !important;
             }
             
             /* Prevent text selection on UI elements */
