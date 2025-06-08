@@ -18,7 +18,7 @@
     "config-icon": "powershell -NoProfile -Command \"& { $densities = @('mdpi','hdpi','xhdpi','xxhdpi','xxxhdpi'); foreach ($d in $densities) { Copy-Item -Path 'images/icons/icon_x512.png' -Destination \"android/app/src/main/res/mipmap-$d/ic_launcher.png\" -Force; Copy-Item -Path 'images/icons/icon_x512.png' -Destination \"android/app/src/main/res/mipmap-$d/ic_launcher_round.png\" -Force } }\"",
     "ensure-android": "if not exist android (echo Adding Android platform... && npx cap add android) else (echo Android platform exists)",
     "build-android": "npm run prepare-android && cd android && gradlew.bat assembleDebug",
-    "build-android-release": "npm run prepare-android && cd android && gradlew.bat assembleRelease",
+    "build-android-release": "npm run prepare-android && cd android && if not exist app\\debug.keystore (echo Generating debug keystore... && keytool -genkey -v -keystore app\\debug.keystore -alias androiddebugkey -storepass android -keypass android -validity 10000 -keyalg RSA -dname \"CN=Android Debug,O=Android,C=US\") && gradlew.bat assembleRelease",
     
     "copy-www": "npm run create-www && npm run copy-files",
     "create-www": "if not exist www mkdir www",

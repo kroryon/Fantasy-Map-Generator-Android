@@ -28,3 +28,19 @@ if (fs.existsSync(anydpiDir)) {
   fs.copyFileSync(iconSrc, dest);
   console.log(`Copied adaptive foreground to ${dest}`);
 }
+
+// Recursively replace any ic_launcher_foreground.png under res
+const walkSync = (dir, callback) => {
+  fs.readdirSync(dir).forEach(name => {
+    const fullPath = path.join(dir, name);
+    if (fs.statSync(fullPath).isDirectory()) {
+      walkSync(fullPath, callback);
+    } else if (name === 'ic_launcher_foreground.png') {
+      callback(fullPath);
+    }
+  });
+};
+walkSync(resBase, filePath => {
+  fs.copyFileSync(iconSrc, filePath);
+  console.log(`Replaced foreground icon at ${filePath}`);
+});
