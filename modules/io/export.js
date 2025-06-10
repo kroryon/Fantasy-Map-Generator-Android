@@ -1,11 +1,85 @@
 "use strict";
 // Functions to export map to image or data files
 
+// Helper function for Android file saving
+async function saveFileOnAndroid(data, filename, isBlob = false) {
+  if (window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android') {
+    try {
+      const { Filesystem } = window.Capacitor.Plugins;
+      if (!Filesystem) {
+        console.error('Capacitor Filesystem plugin not available');
+        return false;
+      }
+      
+      await Filesystem.requestPermissions();
+      
+      // Determine directory - use 'DOCUMENTS' string instead of Directory.Documents
+      const directory = 'DOCUMENTS';
+      
+      if (isBlob) {
+        // Convert blob to base64 for Capacitor
+        const reader = new FileReader();
+        return new Promise((resolve) => {
+          reader.onloadend = async () => {
+            try {
+              const base64Data = reader.result.split(',')[1];
+              await Filesystem.writeFile({
+                path: filename,
+                data: base64Data,
+                directory: directory,
+                encoding: 'base64'
+              });
+              tip(`File saved to device Documents as "${filename}"`, true, 'success', 5000);
+              resolve(true);
+            } catch (error) {
+              console.error('Android blob save error:', error);
+              resolve(false);
+            }
+          };
+          reader.readAsDataURL(data);
+        });
+      } else {
+        // Text data
+        await Filesystem.writeFile({
+          path: filename,
+          data: data,
+          directory: directory,
+          encoding: 'utf8'
+        });
+        tip(`File saved to device Documents as "${filename}"`, true, 'success', 5000);
+        return true;
+      }
+    } catch (error) {
+      console.error('Android save error:', error);
+      return false;
+    }
+  }
+  return false;
+}
+
 async function exportToSvg() {
   TIME && console.time("exportToSvg");
   const url = await getMapURL("svg", {fullMap: true});
+  const filename = getFileName() + ".svg";
+  
+  // Try Android save first
+  if (window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android') {
+    try {
+      const response = await fetch(url);
+      const svgData = await response.text();
+      const saved = await saveFileOnAndroid(svgData, filename, false);
+      if (saved) {
+        TIME && console.timeEnd("exportToSvg");
+        return;
+      }
+    } catch (error) {
+      console.warn('Android save failed, falling back to browser download:', error);
+    }
+  }
+  
+  // Fallback to browser download
   const link = document.createElement("a");
-  link.download = getFileName() + ".svg";
+  link.download = filename;
   link.href = url;
   link.click();
 
@@ -17,6 +91,7 @@ async function exportToSvg() {
 async function exportToPng() {
   TIME && console.time("exportToPng");
   const url = await getMapURL("png");
+  const filename = getFileName() + ".png";
 
   const link = document.createElement("a");
   const canvas = document.createElement("canvas");
@@ -26,10 +101,26 @@ async function exportToPng() {
   const img = new Image();
   img.src = url;
 
-  img.onload = function () {
+  img.onload = async function () {
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    link.download = getFileName() + ".png";
-    canvas.toBlob(function (blob) {
+    link.download = filename;
+    
+    canvas.toBlob(async function (blob) {
+      // Try Android save first
+      if (window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android') {
+        try {
+          const saved = await saveFileOnAndroid(blob, filename, true);
+          if (saved) {
+            canvas.remove();
+            TIME && console.timeEnd("exportToPng");
+            return;
+          }
+        } catch (error) {
+          console.warn('Android PNG save failed, falling back to browser download:', error);
+        }
+      }
+      
+      // Fallback to browser download
       link.href = window.URL.createObjectURL(blob);
       link.click();
       window.setTimeout(function () {
@@ -48,6 +139,7 @@ async function exportToPng() {
 async function exportToJpeg() {
   TIME && console.time("exportToJpeg");
   const url = await getMapURL("png");
+  const filename = getFileName() + ".jpeg";
 
   const canvas = document.createElement("canvas");
   canvas.width = svgWidth * pngResolutionInput.value;
@@ -58,13 +150,30 @@ async function exportToJpeg() {
   img.onload = async function () {
     canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
     const quality = Math.min(rn(1 - pngResolutionInput.value / 20, 2), 0.92);
-    const URL = await canvas.toDataURL("image/jpeg", quality);
-    const link = document.createElement("a");
-    link.download = getFileName() + ".jpeg";
-    link.href = URL;
-    link.click();
-    tip(`${link.download} is saved. Open "Downloads" screen (CTRL + J) to check`, true, "success", 7000);
-    window.setTimeout(() => window.URL.revokeObjectURL(URL), 5000);
+    
+    canvas.toBlob(async function(blob) {
+      // Try Android save first
+      if (window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android') {
+        try {
+          const saved = await saveFileOnAndroid(blob, filename, true);
+          if (saved) {
+            TIME && console.timeEnd("exportToJpeg");
+            return;
+          }
+        } catch (error) {
+          console.warn('Android JPEG save failed, falling back to browser download:', error);
+        }
+      }
+      
+      // Fallback to browser download
+      const URL = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = filename;
+      link.href = URL;
+      link.click();
+      tip(`${link.download} is saved. Open "Downloads" screen (CTRL + J) to check`, true, "success", 7000);
+      window.setTimeout(() => window.URL.revokeObjectURL(URL), 5000);
+    }, "image/jpeg", quality);
   };
 
   TIME && console.timeEnd("exportToJpeg");
@@ -130,16 +239,30 @@ async function exportToPngTiles() {
       zip.file(`${rowName}${cell}.png`, blob);
     }
   }
-
   status.innerHTML = "Zipping files...";
-  zip.generateAsync({type: "blob"}).then(blob => {
+  zip.generateAsync({type: "blob"}).then(async blob => {
     status.innerHTML = "Downloading the archive...";
+    const filename = getFileName() + ".zip";
+    
+    // Try Android save first
+    if (window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android') {
+      try {
+        const saved = await saveFileOnAndroid(blob, filename, true);
+        if (saved) {
+          status.innerHTML = 'Done. ZIP file saved to device Documents folder';
+          return;
+        }
+      } catch (error) {
+        console.warn('Android ZIP save failed, falling back to browser download:', error);
+      }
+    }
+    
+    // Fallback to browser download
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = getFileName() + ".zip";
+    link.download = filename;
     link.click();
     link.remove();
-
     status.innerHTML = 'Done. Check .zip file in "Downloads" (crtl + J)';
     setTimeout(() => URL.revokeObjectURL(link.href), 5000);
   });

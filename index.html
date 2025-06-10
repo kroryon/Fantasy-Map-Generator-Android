@@ -6093,13 +6093,14 @@
           Maps are saved in <i>.map</i> format, that can be loaded back via the <i>Load</i> in menu. There is no way to
           restore the progress if file is lost. Please keep old save files on your machine or cloud storage as backups.
         </p>
-      </div>
-
-      <div id="loadMapData" style="display: none" class="dialog">
+      </div>      <div id="loadMapData" style="display: none" class="dialog">
         <div>
           <strong>Load map from</strong>
-          <button onclick="mapToLoad.click()" data-tip="Load map file (.map or .gz) from your local disk">
+          <button id="loadFromMachineBtn" onclick="mapToLoad.click()" data-tip="Load map file (.map or .gz) from your local disk">
             machine
+          </button>
+          <button id="loadFromAndroidBtn" onclick="loadFromAndroidDevice()" data-tip="Load map file from Android device storage" style="display: none;">
+            device storage
           </button>
            <button onclick="mapToLoadCompatibility.click()" data-tip="Load map file (.map or .gz) from your local disk">
             machine (compatibility)
@@ -8168,7 +8169,7 @@
     <script defer src="modules/ui/hotkeys.js?v=1.104.0"></script>
     <script defer src="modules/coa-renderer.js?v=1.99.00"></script>
     <script defer src="libs/rgbquant.min.js"></script>
-    <script defer src="libs/jquery.ui.touch-punch.min.js"></script>
+    <script defer src="libs/jquery.ui.touch-punch.min.js"></script>      <script src="modules/io/android-storage.js?v=1.0.0"></script>
     <script defer src="modules/io/save.js?v=1.107.4"></script>
     <script defer src="modules/io/load.js?v=1.108.2"></script>
     <script defer src="modules/io/cloud.js?v=1.106.0"></script>

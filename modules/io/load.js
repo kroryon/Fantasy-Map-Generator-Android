@@ -769,3 +769,105 @@ async function parseLoadedData(data, mapVersion) {
     });
   }
 }
+
+// Android-specific file loading functions
+async function isAndroidWebView() {
+  return window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android';
+}
+
+async function loadFromAndroidDevice() {
+  if (!(await isAndroidWebView())) {
+    tip("This function is only available on Android devices", false, "error", 3000);
+    return;
+  }
+
+  try {
+    // Use androidStorage plugin if available
+    if (window.androidStorage && window.androidStorage.isAvailable()) {
+      console.log('loadFromAndroidDevice: using androidStorage plugin');
+      const files = await window.androidStorage.listMapFiles();
+      if (!Array.isArray(files)) {
+        console.error('androidStorage.listMapFiles returned non-array:', files);
+        tip('Error reading files from native storage', false, 'error', 5000);
+        return;
+      }
+      if (files.length === 0) {
+        tip("No .map or .gz files found in accessible directories", false, "error", 5000);
+        return;
+      }
+      showAndroidFileSelectionDialog(files);
+    } else {
+      // Debug missing plugin
+      console.error('androidStorage plugin not available', {
+        androidStorage: window.androidStorage,
+        capacitor: window.Capacitor,
+        filesystemPlugin: window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem
+      });
+      tip('Native storage plugin unavailable; cannot load files on Android', false, 'error', 5000);
+    }
+  } catch (error) {
+    console.error("Android file loading error:", error);
+    tip(`Error accessing device storage: ${error.message}`, false, "error", 5000);
+  }
+}
+
+async function loadSelectedAndroidFile(fileIndex) {
+  try {
+    const file = window.androidMapFiles[fileIndex];
+    $("#alert").dialog("close");
+    delete window.androidMapFiles;
+    tip("Loading map file...", false, "info", 3000);
+    let fileData;
+    if (window.androidStorage && window.androidStorage.isAvailable()) {
+      console.log('loadSelectedAndroidFile: using androidStorage plugin', file);
+      const result = await window.androidStorage.loadFile(file.fullPath || file.path);
+      if (result && result.success) {
+        fileData = result.data;
+      } else {
+        console.error('androidStorage.loadFile error:', result);
+        throw new Error(result && result.message || 'Unknown native load error');
+      }
+    } else {
+      // Debug missing plugin
+      console.error('androidStorage plugin not available for load', {
+        androidStorage: window.androidStorage,
+        capacitor: window.Capacitor,
+        filesystemPlugin: window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem
+      });
+      tip('Native storage plugin unavailable; cannot load file', false, 'error', 5000);
+      return;
+    }
+    const blob = new Blob([fileData], { type: 'text/plain' });
+    uploadMap(blob);
+  } catch (error) {
+    console.error("Error loading selected file:", error);
+    tip(`Error loading file: ${error.message}`, false, "error", 5000);
+  }
+}
+
+// Initialize Android-specific UI when page loads
+document.addEventListener('DOMContentLoaded', function() {
+  initAndroidUI();
+});
+
+async function initAndroidUI() {
+  if (window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android') {
+    // Hide traditional file input button and show Android-specific button
+    const loadFromMachineBtn = document.getElementById('loadFromMachineBtn');
+    const loadFromAndroidBtn = document.getElementById('loadFromAndroidBtn');
+    
+    if (loadFromMachineBtn && loadFromAndroidBtn) {
+      loadFromMachineBtn.style.display = 'none';
+      loadFromAndroidBtn.style.display = 'inline-block';
+    }
+    
+    // Also update tooltips and text to be more Android-friendly
+    const saveButtons = document.querySelectorAll('[data-tip*="Downloads"]');
+    saveButtons.forEach(btn => {
+      const currentTip = btn.getAttribute('data-tip');
+      if (currentTip) {
+        btn.setAttribute('data-tip', currentTip.replace('Downloads', 'device storage'));
+      }
+    });
+  }
+}

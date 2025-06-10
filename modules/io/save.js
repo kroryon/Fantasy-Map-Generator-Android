@@ -168,17 +168,85 @@ async function saveToStorage(mapData, showTip = false) {
 }
 
 // download map file
-function saveToMachine(mapData, filename) {
-  const blob = new Blob([mapData], {type: "text/plain"});
-  const URL = window.URL.createObjectURL(blob);
+function isAndroidWebView() {
+  return window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android';
+}
 
-  const link = document.createElement("a");
-  link.download = filename;
-  link.href = URL;
-  link.click();
-
-  tip('Map is saved to the "Downloads" folder (CTRL + J to open)', true, "success", 8000);
-  window.URL.revokeObjectURL(URL);
+async function saveToMachine(mapData, filename) {
+  if (isAndroidWebView()) {
+    try {
+      const { Filesystem, Capacitor } = window.Capacitor.Plugins ? 
+        { Filesystem: window.Capacitor.Plugins.Filesystem, Capacitor: window.Capacitor } : 
+        { Filesystem: null, Capacitor: window.Capacitor };
+      
+      if (!Filesystem) {
+        console.error('Capacitor Filesystem plugin not available');
+        tip('Error: Filesystem plugin not available', false, 'error', 8000);
+        return;
+      }
+      
+      // Debug: log platform
+      const platform = Capacitor.getPlatform();
+      console.log('Platform detected:', platform);
+      
+      // Request permissions
+      await Filesystem.requestPermissions();
+      
+      // Use string-based directory names instead of enum objects
+      const dirAttempts = [
+        { dir: 'DOCUMENTS', name: 'Documents', path: filename },
+        { dir: 'DATA', name: 'App Data', path: filename },
+        { dir: 'CACHE', name: 'Cache', path: filename }
+      ];
+      
+      // Try EXTERNAL first for Android
+      if (platform === 'android') {
+        dirAttempts.unshift({ dir: 'EXTERNAL', name: 'External Storage', path: `Download/${filename}` });
+        dirAttempts.unshift({ dir: 'EXTERNAL_STORAGE', name: 'External Storage Root', path: filename });
+      }
+      
+      let saved = false;
+      let lastError = null;
+      
+      for (const attempt of dirAttempts) {
+        try {
+          await Filesystem.writeFile({
+            path: attempt.path,
+            data: mapData,
+            directory: attempt.dir,
+            encoding: 'utf8'
+          });
+          
+          console.log(`File saved successfully to ${attempt.name}`);
+          tip(`Map saved to device ${attempt.name} folder as "${filename}"`, true, 'success', 8000);
+          saved = true;
+          break;
+        } catch (error) {
+          console.warn(`Failed to save to ${attempt.name}:`, error.message);
+          lastError = error;
+        }
+      }
+      
+      if (!saved) {
+        console.error('All save attempts failed. Last error:', lastError);
+        tip(`Error saving file: ${lastError?.message || 'Unknown error'}`, false, 'error', 8000);
+      }
+      
+    } catch (error) {
+      console.error('Android save error:', error);
+      tip(`Error saving file: ${error.message}`, false, 'error', 8000);
+    }
+  } else {
+    // Regular browser download fallback
+    const blob = new Blob([mapData], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = url;
+    link.click();
+    tip(`Map downloaded to browser as "${filename}"`, true, 'success', 8000);
+    window.URL.revokeObjectURL(url);
+  }
 }
 
 async function saveToDropbox(mapData, filename) {

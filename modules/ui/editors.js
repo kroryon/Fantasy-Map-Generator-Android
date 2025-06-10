@@ -906,14 +906,40 @@ function getFileName(dataType) {
   return name + " " + type + dateString;
 }
 
-function downloadFile(data, name, type = "text/plain") {
-  const dataBlob = new Blob([data], {type});
-  const url = window.URL.createObjectURL(dataBlob);
-  const link = document.createElement("a");
-  link.download = name;
-  link.href = url;
-  link.click();
-  window.setTimeout(() => window.URL.revokeObjectURL(url), 2000);
+async function isAndroidWebView() {
+  return window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android';
+}
+
+async function downloadFile(data, fileName) {
+  try {
+    if (isAndroidWebView() && window.androidStorage && window.androidStorage.isAvailable()) {
+      console.log('downloadFile: using androidStorage plugin', window.androidStorage);
+      const res = await window.androidStorage.saveFile(data, fileName);
+      if (!res.success) {
+        console.error('androidStorage.saveFile error:', res);
+        throw new Error(res.message);
+      }
+      tip(`File saved to ${res.location}`, true, 'success');
+    } else {
+      // Debug plugin availability
+      console.warn('downloadFile fallback, plugins:', {
+        androidStorage: window.androidStorage,
+        capacitor: window.Capacitor,
+        filesystem: window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem
+      });
+      const blob = new Blob([data], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+      tip('File downloaded to browser', true, 'success');
+    }
+  } catch (error) {
+    console.error('downloadFile error:', error);
+    tip(`Download failed: ${error.message}`, false, 'error');
+  }
 }
 
 function uploadFile(el, callback) {
