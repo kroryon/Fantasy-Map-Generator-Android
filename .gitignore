@@ -9,10 +9,18 @@ out/
 coverage/
 
 # Mobile builds (generated - recreated with each build)
-android/
-ios/
 www/
-
+# Android build outputs (pero sí subir la carpeta android y su código fuente)
+android/app/build/
+android/build/
+android/.gradle/
+android/.idea/
+android/.cxx/
+android/local.properties
+android/.DS_Store
+android/app/.cxx/
+android/app/.externalNativeBuild/
+android/.gradle/
 # Capacitor
 .capacitor/
 
