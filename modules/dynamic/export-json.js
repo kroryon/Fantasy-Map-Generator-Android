@@ -1,4 +1,98 @@
-export function exportToJson(type) {
+// Helper function for Android file saving with proper permission handling
+async function saveFileOnAndroid(data, filename, isBlob = false) {
+  if (window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android') {
+    try {
+      const { Filesystem } = window.Capacitor.Plugins;
+      if (!Filesystem) {
+        console.error('Capacitor Filesystem plugin not available');
+        return false;
+      }
+      
+      // Request permissions explicitly
+      const permissions = await Filesystem.requestPermissions();
+      console.log('Export JSON permissions:', permissions);
+      
+      if (permissions.publicStorage !== 'granted') {
+        console.warn('Public storage permission not granted, trying share fallback');
+        
+        // Try using Web Share API as fallback
+        if (navigator.share && isBlob) {
+          const file = new File([data], filename, { type: data.type || 'application/json' });
+          await navigator.share({
+            files: [file],
+            title: 'Export Fantasy Map JSON',
+            text: `Export: ${filename}`
+          });
+          tip(`JSON file shared successfully. Choose "Save to Files" to save to device.`, true, 'success', 8000);
+          return true;
+        }
+        
+        return false;
+      }
+      
+      // Try multiple directories for better compatibility
+      const dirAttempts = [
+        { dir: 'DOCUMENTS', name: 'Documents' },
+        { dir: 'EXTERNAL', name: 'Downloads', path: `Download/${filename}` },
+        { dir: 'EXTERNAL_STORAGE', name: 'External Storage' }
+      ];
+      
+      for (const attempt of dirAttempts) {
+        try {
+          const filePath = attempt.path || filename;
+          
+          if (isBlob) {
+            // Convert blob to base64 for Capacitor
+            const reader = new FileReader();
+            const success = await new Promise((resolve) => {
+              reader.onloadend = async () => {
+                try {
+                  const base64Data = reader.result.split(',')[1];
+                  await Filesystem.writeFile({
+                    path: filePath,
+                    data: base64Data,
+                    directory: attempt.dir,
+                    encoding: 'base64'
+                  });
+                  resolve(true);
+                } catch (error) {
+                  console.warn(`Failed to save blob to ${attempt.name}:`, error.message);
+                  resolve(false);
+                }
+              };
+              reader.readAsDataURL(data);
+            });
+            
+            if (success) {
+              tip(`JSON file saved to device ${attempt.name} as "${filename}"`, true, 'success', 5000);
+              return true;
+            }
+          } else {
+            // Text data
+            await Filesystem.writeFile({
+              path: filePath,
+              data: data,
+              directory: attempt.dir,
+              encoding: 'utf8'
+            });
+            tip(`JSON file saved to device ${attempt.name} as "${filename}"`, true, 'success', 5000);
+            return true;
+          }
+        } catch (error) {
+          console.warn(`Failed to save JSON to ${attempt.name}:`, error.message);
+        }
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Android JSON save error:', error);
+      return false;
+    }
+  }
+  return false;
+}
+
+export async function exportToJson(type) {
   if (customization)
     return tip("Data cannot be exported when edit mode is active, please exit the mode and retry", false, "error");
   closeDialogs("#alert");
@@ -12,10 +106,26 @@ export function exportToJson(type) {
   };
 
   const mapData = typeMap[type]();
+  const filename = getFileName(type) + ".json";
   const blob = new Blob([mapData], {type: "application/json"});
+  
+  // Try Android save first
+  if (window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android') {
+    try {
+      const saved = await saveFileOnAndroid(blob, filename, true);
+      if (saved) {
+        TIME && console.timeEnd("exportToJson");
+        return;
+      }
+    } catch (error) {
+      console.warn('Android JSON save failed, falling back to browser download:', error);
+    }
+  }
+  
+  // Fallback to browser download
   const URL = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
-  link.download = getFileName(type) + ".json";
+  link.download = filename;
   link.href = URL;
   link.click();
   tip(`${link.download} is saved. Open "Downloads" screen (CTRL + J) to check`, true, "success", 7000);

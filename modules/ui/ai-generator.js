@@ -176,27 +176,38 @@ async function handleStream(response, getContent, providerType) {
   }
 }
 
-function generateWithAi(defaultPrompt, onApply) {
+function handleAiModelChange(newModelValue) {
+  const newProvider = MODELS[newModelValue];
+  const keyInput = byId("aiGeneratorKey");
+  if (keyInput) {
+    if (newProvider === "ollama") {
+      keyInput.placeholder = "Enter Ollama model name (e.g., llama3)";
+    } else {
+      keyInput.placeholder = "Enter API Key";
+    }
+    keyInput.value = localStorage.getItem(`fmg-ai-kl-${newProvider}`) || "";
+  }
+}
 
+function generateWithAi(defaultPrompt, onApply) {
   function updateDialogElements() {
     byId("aiGeneratorResult").value = "";
     byId("aiGeneratorPrompt").value = defaultPrompt;
     byId("aiGeneratorTemperature").value = localStorage.getItem("fmg-ai-temperature") || "1";
 
     const select = byId("aiGeneratorModel");
-    const currentModelVal = select.value; 
-    select.options.length = 0;
-    Object.keys(MODELS).forEach(model => select.options.add(new Option(model, model)));
     
     const storedModel = localStorage.getItem("fmg-ai-model");
     if (storedModel && MODELS[storedModel]) {
       select.value = storedModel;
-    } else if (currentModelVal && MODELS[currentModelVal]) {
-      select.value = currentModelVal;
     } else {
       select.value = DEFAULT_MODEL;
     }
-    if (!select.value || !MODELS[select.value]) select.value = DEFAULT_MODEL; 
+    
+    // Ensure we have a valid selection
+    if (!select.value || !MODELS[select.value]) {
+      select.value = DEFAULT_MODEL;
+    }
 
     const provider = MODELS[select.value];
     const keyInput = byId("aiGeneratorKey");
@@ -270,32 +281,10 @@ function generateWithAi(defaultPrompt, onApply) {
             } else if (provider && PROVIDERS[provider] && PROVIDERS[provider].keyLink) {
               openURL(PROVIDERS[provider].keyLink);
             }
-          });
-        } else {
+          });        } else {
           ERROR && console.error("AI Generator: Could not find 'aiGeneratorKeyHelp' element for event listener.");
         }
-
-        const modelSelect = byId("aiGeneratorModel");
-        if (modelSelect) {
-          modelSelect.addEventListener("change", function() {
-              const newModelValue = this.value;
-              const newProvider = MODELS[newModelValue];
-              const keyInput = byId("aiGeneratorKey");
-              if (keyInput) {
-                if (newProvider === "ollama") {
-                    keyInput.placeholder = "Enter Ollama model name (e.g., llama3)";
-                } else {
-                    keyInput.placeholder = "Enter API Key";
-                }
-
-                keyInput.value = localStorage.getItem(`fmg-ai-kl-${newProvider}`) || "";
-              } else {
-                ERROR && console.error("AI Generator: Could not find 'aiGeneratorKey' element during model change listener.");
-              }
-          });
-        } else {
-          ERROR && console.error("AI Generator: Could not find 'aiGeneratorModel' element for event listener.");
-        }
+        
         modules.generateWithAi_setupDone = true;
       }
 
@@ -320,3 +309,4 @@ function generateWithAi(defaultPrompt, onApply) {
 }
 
 window.generateWithAi = generateWithAi;
+window.handleAiModelChange = handleAiModelChange;

@@ -189,21 +189,32 @@ async function saveToMachine(mapData, filename) {
       const platform = Capacitor.getPlatform();
       console.log('Platform detected:', platform);
       
-      // Request permissions
-      await Filesystem.requestPermissions();
+      // Request permissions explicitly
+      const permissions = await Filesystem.requestPermissions();
+      console.log('Filesystem permissions:', permissions);
       
-      // Use string-based directory names instead of enum objects
+      if (permissions.publicStorage !== 'granted') {
+        // Show detailed instructions for Samsung devices
+        tip('Storage permission required. Go to Android Settings > Apps > Fantasy Map Generator > Permissions > Files and media > Allow access to manage all files', false, 'warn', 12000);
+        
+        // Try to use the Document Picker approach as fallback
+        try {
+          await saveWithDocumentPicker(mapData, filename);
+          return;
+        } catch (docError) {
+          console.error('Document picker fallback failed:', docError);
+          tip('Cannot save without storage permissions. Please grant file access in Android settings.', false, 'error', 8000);
+          return;
+        }
+      }
+      
+      // Try multiple directories for better compatibility
       const dirAttempts = [
         { dir: 'DOCUMENTS', name: 'Documents', path: filename },
-        { dir: 'DATA', name: 'App Data', path: filename },
-        { dir: 'CACHE', name: 'Cache', path: filename }
+        { dir: 'EXTERNAL', name: 'External Storage', path: `Download/${filename}` },
+        { dir: 'EXTERNAL_STORAGE', name: 'External Storage Root', path: filename },
+        { dir: 'DATA', name: 'App Data', path: filename }
       ];
-      
-      // Try EXTERNAL first for Android
-      if (platform === 'android') {
-        dirAttempts.unshift({ dir: 'EXTERNAL', name: 'External Storage', path: `Download/${filename}` });
-        dirAttempts.unshift({ dir: 'EXTERNAL_STORAGE', name: 'External Storage Root', path: filename });
-      }
       
       let saved = false;
       let lastError = null;
@@ -217,7 +228,7 @@ async function saveToMachine(mapData, filename) {
             encoding: 'utf8'
           });
           
-          console.log(`File saved successfully to ${attempt.name}`);
+          console.log(`File saved successfully to ${attempt.name}: ${attempt.path}`);
           tip(`Map saved to device ${attempt.name} folder as "${filename}"`, true, 'success', 8000);
           saved = true;
           break;
@@ -229,12 +240,30 @@ async function saveToMachine(mapData, filename) {
       
       if (!saved) {
         console.error('All save attempts failed. Last error:', lastError);
-        tip(`Error saving file: ${lastError?.message || 'Unknown error'}`, false, 'error', 8000);
+        
+        // Try Document Picker as final fallback
+        try {
+          await saveWithDocumentPicker(mapData, filename);
+        } catch (docError) {
+          console.error('Document picker fallback also failed:', docError);
+          tip(`Error saving file: ${lastError?.message || 'Storage access denied'}. Please try granting storage permissions in Android settings.`, false, 'error', 12000);
+        }
       }
       
     } catch (error) {
       console.error('Android save error:', error);
-      tip(`Error saving file: ${error.message}`, false, 'error', 8000);
+      
+      // Try Document Picker as fallback for permission errors
+      if (error.message && error.message.includes('permission')) {
+        try {
+          await saveWithDocumentPicker(mapData, filename);
+        } catch (docError) {
+          console.error('Document picker fallback failed:', docError);
+          tip(`Permission error: ${error.message}. Please grant storage access in Android settings.`, false, 'error', 8000);
+        }
+      } else {
+        tip(`Error saving file: ${error.message}`, false, 'error', 8000);
+      }
     }
   } else {
     // Regular browser download fallback
@@ -246,6 +275,45 @@ async function saveToMachine(mapData, filename) {
     link.click();
     tip(`Map downloaded to browser as "${filename}"`, true, 'success', 8000);
     window.URL.revokeObjectURL(url);
+  }
+}
+
+// Alternative save method using Android's document picker (for when permissions are denied)
+async function saveWithDocumentPicker(mapData, filename) {
+  try {
+    // Create a temporary blob that can be shared
+    const blob = new Blob([mapData], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    
+    // Try to use Android's built-in share functionality
+    if (navigator.share) {
+      // Create a File object from the blob
+      const file = new File([blob], filename, { type: 'text/plain' });
+      
+      await navigator.share({
+        files: [file],
+        title: 'Save Fantasy Map',
+        text: `Save your fantasy map: ${filename}`
+      });
+      
+      tip(`Map shared successfully. Choose "Save to Files" or similar option to save to device.`, true, 'success', 8000);
+      return;
+    }
+    
+    // Fallback: trigger download
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = url;
+    link.click();
+    
+    tip(`Map file prepared for download. Check your Downloads folder for "${filename}"`, true, 'info', 8000);
+    
+    // Clean up
+    setTimeout(() => window.URL.revokeObjectURL(url), 5000);
+    
+  } catch (error) {
+    console.error('Document picker save failed:', error);
+    throw error;
   }
 }
 

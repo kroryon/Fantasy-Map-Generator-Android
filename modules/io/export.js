@@ -1,7 +1,7 @@
 "use strict";
 // Functions to export map to image or data files
 
-// Helper function for Android file saving
+// Helper function for Android file saving with proper permission handling
 async function saveFileOnAndroid(data, filename, isBlob = false) {
   if (window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android') {
     try {
@@ -11,44 +11,86 @@ async function saveFileOnAndroid(data, filename, isBlob = false) {
         return false;
       }
       
-      await Filesystem.requestPermissions();
+      // Request permissions explicitly
+      const permissions = await Filesystem.requestPermissions();
+      console.log('Export permissions:', permissions);
       
-      // Determine directory - use 'DOCUMENTS' string instead of Directory.Documents
-      const directory = 'DOCUMENTS';
-      
-      if (isBlob) {
-        // Convert blob to base64 for Capacitor
-        const reader = new FileReader();
-        return new Promise((resolve) => {
-          reader.onloadend = async () => {
-            try {
-              const base64Data = reader.result.split(',')[1];
-              await Filesystem.writeFile({
-                path: filename,
-                data: base64Data,
-                directory: directory,
-                encoding: 'base64'
-              });
-              tip(`File saved to device Documents as "${filename}"`, true, 'success', 5000);
-              resolve(true);
-            } catch (error) {
-              console.error('Android blob save error:', error);
-              resolve(false);
-            }
-          };
-          reader.readAsDataURL(data);
-        });
-      } else {
-        // Text data
-        await Filesystem.writeFile({
-          path: filename,
-          data: data,
-          directory: directory,
-          encoding: 'utf8'
-        });
-        tip(`File saved to device Documents as "${filename}"`, true, 'success', 5000);
-        return true;
+      if (permissions.publicStorage !== 'granted') {
+        console.warn('Public storage permission not granted, trying share fallback');
+        
+        // Try using Web Share API as fallback
+        if (navigator.share && isBlob) {
+          const file = new File([data], filename, { type: data.type || 'application/octet-stream' });
+          await navigator.share({
+            files: [file],
+            title: 'Export Fantasy Map',
+            text: `Export: ${filename}`
+          });
+          tip(`File shared successfully. Choose "Save to Files" to save to device.`, true, 'success', 8000);
+          return true;
+        }
+        
+        return false;
       }
+      
+      // Try multiple directories for better compatibility
+      const dirAttempts = [
+        { dir: 'DOCUMENTS', name: 'Documents' },
+        { dir: 'EXTERNAL', name: 'Downloads', path: `Download/${filename}` },
+        { dir: 'EXTERNAL_STORAGE', name: 'External Storage' }
+      ];
+      
+      for (const attempt of dirAttempts) {
+        try {
+          const filePath = attempt.path || filename;
+          
+          if (isBlob) {
+            // Convert blob to base64 for Capacitor
+            const reader = new FileReader();
+            const success = await new Promise((resolve) => {
+              reader.onloadend = async () => {
+                try {
+                  const base64Data = reader.result.split(',')[1];
+                  await Filesystem.writeFile({
+                    path: filePath,
+                    data: base64Data,
+                    directory: attempt.dir,
+                    encoding: 'base64'
+                  });
+                  resolve(true);
+                } catch (error) {
+                  console.warn(`Failed to save blob to ${attempt.name}:`, error.message);
+                  resolve(false);
+                }
+              };
+              reader.readAsDataURL(data);
+            });
+            
+            if (success) {
+              tip(`File saved to device ${attempt.name} as "${filename}"`, true, 'success', 5000);
+              return true;
+            }
+          } else {
+            // Text data
+            await Filesystem.writeFile({
+              path: filePath,
+              data: data,
+              directory: attempt.dir,
+              encoding: 'utf8'
+            });
+            tip(`File saved to device ${attempt.name} as "${filename}"`, true, 'success', 5000);
+            return true;
+          }
+        } catch (error) {
+          console.warn(`Failed to save to ${attempt.name}:`, error.message);
+          continue;
+        }
+      }
+      
+      // All attempts failed
+      console.error('All save attempts failed');
+      return false;
+      
     } catch (error) {
       console.error('Android save error:', error);
       return false;

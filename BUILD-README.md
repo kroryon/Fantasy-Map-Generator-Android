@@ -16,7 +16,7 @@ git clone https://github.com/kroryon/Fantasy-Map-Generator-Android.git
 cd Fantasy-Map-Generator-Ck3
 
 # Install dependencies
-npm install
+npm install --legacy-peer-deps
 ```
 
 ## 🚀 Android Development Setup
