@@ -86,8 +86,13 @@ async function generateWithAnthropic({key, model, prompt, temperature, onContent
 }
 
 async function generateWithOllama({key, model, prompt, temperature, onContent}) {
-  // For Ollama, 'key' is the actual model name entered by the user.
-  // 'model' is the value from the dropdown, e.g., "Ollama (enter model in key field)".
+  // Check if we have the Android compatibility layer
+  if (window.ollamaAndroid) {
+    console.log('[AI Generator] Using Android Ollama compatibility layer');
+    return await window.ollamaAndroid.generateWithOllama({key, model, prompt, temperature, onContent});
+  }
+  
+  // Fallback to original implementation for web
   const ollamaModelName = key;
 
   const headers = {
@@ -104,7 +109,7 @@ async function generateWithOllama({key, model, prompt, temperature, onContent}) 
     stream: true
   };
 
-  const response = await fetch("http://192.168.178.46:11434/api/generate", {
+  const response = await fetch("http://localhost:11434/api/generate", {
     method: "POST",
     headers,
     body: JSON.stringify(body)
