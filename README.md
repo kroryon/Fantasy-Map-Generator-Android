@@ -8,26 +8,10 @@ Azgaar's _Fantasy Map Generator_ is a free web application that helps fantasy wr
 - **Progress**: [Trello Board](https://trello.com/b/7x832DG4/fantasy-map-generator)
 - **Blog**: [Fantasy Maps for fun and glory](https://azgaar.wordpress.com)
 
-## 📱💻 Desktop & Mobile Versions
+## 📱💻Mobile Versions
 
 This repository provides:
-- **Windows Desktop** (.exe executable)
-- **Linux Desktop** (native binary)
 - **Android Mobile** (.apk installer)
-
-### 🚀 Quick Start
-```bash
-# Clone and install
-git clone <repository-url>
-cd Fantasy-Map-Generator-Ck3
-npm install
-
-# Build desktop version
-npm run build-desktop
-
-# Build Android version (requires Android Studio)
-npm run build-android
-```
 
 ### 📖 Complete Build Instructions
 **See [BUILD-README.md](BUILD-README.md) for detailed setup and build instructions.**
