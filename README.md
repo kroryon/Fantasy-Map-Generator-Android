@@ -23,6 +23,11 @@ The BUILD-README.md contains:
 - Environment variables setup
 - Distribution instructions
 
+##  Know issues
+- ONLY COMPATIBLE WITH ANDROID
+- DROPBOX DOESNT WORK
+- I NEED TO FIX THE WAY SOME THINGS ARE SAVE, LIKE PNG AND ALMOST ALL IN EXPORT BUT SAVE THE .MAP IS POSSIBLE AND YOU CAN USE MY OTHER REPO TO USE IT ON COMPUTER
+
 ## 🖼️ Screenshots
 
 
