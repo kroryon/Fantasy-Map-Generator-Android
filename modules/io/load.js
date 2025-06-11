@@ -270,7 +270,7 @@ async function parseLoadedData(data, mapVersion) {
     {
       if (data[2]) mapCoordinates = JSON.parse(data[2]);
       if (data[4]) notes = JSON.parse(data[4]);
-      if (data[33) rulers.fromString(data[33]);
+      if (data[33]) rulers.fromString(data[33]);
       if (data[34]) {
         const usedFonts = JSON.parse(data[34]);
         usedFonts.forEach(usedFont => {
@@ -488,121 +488,64 @@ async function parseLoadedData(data, mapVersion) {
       // add custom texture if any
       const textureHref = texture.attr("data-href");
       if (textureHref) updateTextureSelectValue(textureHref);
-    }    // data integrity checks and fixes
+    }    // data integrity checks
     {
       const {cells, vertices} = pack;
 
-      console.log('[Data Integrity] Starting integrity checks...');
-      
-      // 1. Check cells mismatch (critical)
       const cellsMismatch = cells.i.length !== cells.state.length;
-      if (cellsMismatch) {
-        const message = "[Data integrity] Cells array length mismatch detected. Map data is corrupted.";
-        console.error(message);
-        throw new Error(message);
-      }
-
-      // 2. Check and fix feature vertices mismatch
+      
+      // Check for feature vertices mismatch and attempt to fix it
       let featureVerticesMismatch = false;
       let fixedFeaturesCount = 0;
-      let removedFeaturesCount = 0;
       
-      console.log(`[Data Integrity] Checking ${pack.features.length} features...`);
-      
-      // First pass: identify and fix invalid vertices
       pack.features.forEach((feature, featureIndex) => {
-        if (!feature || !feature.vertices || feature.vertices.length === 0) return;
+        if (!feature || !feature.vertices) return;
         
-        const originalVertexCount = feature.vertices.length;
-        const invalidVertices = feature.vertices.filter(vertex => !vertices.p[vertex] || vertex >= vertices.p.length);
+        // Find invalid vertices (vertices that don't exist in vertices.p)
+        const invalidVertices = feature.vertices.filter(vertex => !vertices.p[vertex]);
         
         if (invalidVertices.length > 0) {
           featureVerticesMismatch = true;
-          console.warn(`[Data Integrity] Feature ${featureIndex} (${feature.type}) has ${invalidVertices.length}/${originalVertexCount} invalid vertices`);
+          console.warn(`[Data integrity] Feature ${featureIndex} has ${invalidVertices.length} invalid vertices:`, invalidVertices);
           
-          // Remove invalid vertices
-          const validVertices = feature.vertices.filter(vertex => vertices.p[vertex] && vertex < vertices.p.length);
+          // Attempt to fix by removing invalid vertices
+          const validVertices = feature.vertices.filter(vertex => vertices.p[vertex]);
           
           if (validVertices.length >= 3) {
-            // Feature can be salvaged
+            // Keep feature with valid vertices only
             feature.vertices = validVertices;
             fixedFeaturesCount++;
+            console.log(`[Data integrity] Fixed feature ${featureIndex} by removing invalid vertices. Remaining vertices: ${validVertices.length}`);
             
-            // Recalculate feature area
-            try {
-              const points = feature.vertices.map(vertex => vertices.p[vertex]);
-              const area = Math.abs(d3.polygonArea(points));
-              feature.area = area;
-              console.log(`[Data Integrity] Fixed feature ${featureIndex}: ${originalVertexCount} -> ${validVertices.length} vertices`);
-            } catch (error) {
-              console.warn(`[Data Integrity] Could not recalculate area for feature ${featureIndex}:`, error);
-            }
-          } else {
-            // Feature cannot be salvaged
-            console.warn(`[Data Integrity] Feature ${featureIndex} has too few valid vertices (${validVertices.length}), marking as removed`);
-            feature.removed = true;
-            removedFeaturesCount++;
-          }
-        }
-      });
-
-      // 3. Additional cleanup: remove features marked as removed
-      if (removedFeaturesCount > 0) {
-        // Update cells.f to remove references to removed features
-        for (let i = 0; i < cells.f.length; i++) {
-          const featureId = cells.f[i];
-          if (featureId && pack.features[featureId] && pack.features[featureId].removed) {
-            // Find nearest valid feature or set to 0
-            cells.f[i] = 0;
-          }
-        }
-      }
-
-      // 4. Validate vertices structure
-      let invalidVerticesFixed = 0;
-      for (let i = 0; i < vertices.p.length; i++) {
-        if (!vertices.p[i] || !Array.isArray(vertices.p[i]) || vertices.p[i].length !== 2) {
-          console.warn(`[Data Integrity] Invalid vertex ${i} detected`);
-          // Remove references to this vertex from all features
-          pack.features.forEach(feature => {
-            if (feature && feature.vertices) {
-              const index = feature.vertices.indexOf(i);
-              if (index !== -1) {
-                feature.vertices.splice(index, 1);
-                invalidVerticesFixed++;
+            // Recalculate feature area if possible
+            if (feature.vertices.length >= 3) {
+              try {
+                const points = feature.vertices.map(vertex => vertices.p[vertex]);
+                const area = Math.abs(d3.polygonArea(points));
+                feature.area = area;
+              } catch (error) {
+                console.warn(`[Data integrity] Could not recalculate area for feature ${featureIndex}:`, error);
               }
             }
-          });
-        }
-      }
-
-      // 5. Final validation: ensure all features have valid vertices
-      let finalInvalidFeatures = 0;
-      pack.features.forEach((feature, index) => {
-        if (!feature || feature.removed) return;
-        if (!feature.vertices || feature.vertices.length < 3) {
-          feature.removed = true;
-          finalInvalidFeatures++;
-          console.warn(`[Data Integrity] Final check: Removing feature ${index} with insufficient vertices`);
+          } else {
+            // Feature has too few valid vertices, mark it for removal
+            console.warn(`[Data integrity] Feature ${featureIndex} has too few valid vertices (${validVertices.length}), marking as removed`);
+            feature.removed = true;
+          }
         }
       });
-
-      // Report results
-      if (featureVerticesMismatch || invalidVerticesFixed > 0 || finalInvalidFeatures > 0) {
-        const fixes = [];
-        if (fixedFeaturesCount > 0) fixes.push(`${fixedFeaturesCount} features repaired`);
-        if (removedFeaturesCount > 0) fixes.push(`${removedFeaturesCount} features removed`);
-        if (invalidVerticesFixed > 0) fixes.push(`${invalidVerticesFixed} invalid vertex references cleaned`);
-        if (finalInvalidFeatures > 0) fixes.push(`${finalInvalidFeatures} final invalid features removed`);
-        
-        const message = `Map loaded successfully. Data integrity fixes applied: ${fixes.join(', ')}.`;
-        console.log(`[Data Integrity] ${message}`);
-        
+      
+      if (cellsMismatch) {
+        const message = "[Data integrity] Cells mismatch detected. Map data may be corrupted.";
+        console.error(message);
+        throw new Error(message);
+      }
+      
+      if (featureVerticesMismatch) {
+        console.warn(`[Data integrity] Feature vertices mismatch detected and fixed for ${fixedFeaturesCount} features`);
         if (window.tip) {
-          tip(message, false, "success", 6000);
+          tip(`Map loaded successfully. Fixed ${fixedFeaturesCount} features with invalid vertices.`, false, "success", 5000);
         }
-      } else {
-        console.log('[Data Integrity] All integrity checks passed');
       }
 
       const invalidStates = [...new Set(cells.state)].filter(s => !pack.states[s] || pack.states[s].removed);
@@ -873,35 +816,9 @@ async function parseLoadedData(data, mapVersion) {
   }
 }
 
-// Android-specific file loading functions using modern File Picker
+// Android-specific file loading functions using Capacitor Filesystem directly
 async function isAndroidWebView() {
   return window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android';
-}
-
-async function requestAndroidPermissions() {
-  try {
-    const { Filesystem } = window.Capacitor.Plugins;
-    
-    if (!Filesystem) {
-      console.error('Filesystem plugin not available');
-      return false;
-    }
-
-    // Request permissions explicitly
-    const permissions = await Filesystem.requestPermissions();
-    console.log('Filesystem permissions:', permissions);
-    
-    // Check if we have the required permissions
-    if (permissions.publicStorage !== 'granted') {
-      tip('Storage permission required. Please grant permission in Android settings to save/load files.', false, 'warn', 8000);
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('Error requesting permissions:', error);
-    return false;
-  }
 }
 
 async function loadFromAndroidDevice() {
@@ -911,96 +828,69 @@ async function loadFromAndroidDevice() {
   }
 
   try {
-    // First request permissions
-    const hasPermissions = await requestAndroidPermissions();
-    if (!hasPermissions) {
-      tip('Cannot load files without storage permissions. Please grant permissions in Android settings.', false, 'error', 8000);
-      return;
-    }
-
-    const { FilePicker } = window.Capacitor.Plugins;
+    const { Filesystem, Capacitor } = window.Capacitor.Plugins ? 
+      { Filesystem: window.Capacitor.Plugins.Filesystem, Capacitor: window.Capacitor } : 
+      { Filesystem: null, Capacitor: window.Capacitor };
     
-    if (!FilePicker) {
-      console.error('FilePicker plugin not available');
-      tip('Error: FilePicker plugin not available. Please install @capawesome/capacitor-file-picker', false, 'error', 8000);
+    if (!Filesystem) {
+      console.error('Capacitor Filesystem plugin not available');
+      tip('Error: Filesystem plugin not available', false, 'error', 8000);
       return;
     }
-
-    console.log('Starting file picker...');
-    tip("Opening file picker...", false, "info", 2000);
-
-    // Use a more specific file type configuration
-    const result = await FilePicker.pickFiles({
-      types: ['application/octet-stream', 'text/plain', '*/*'],
-      multiple: false,
-      readData: true
-    });
-
-    if (result.files && result.files.length > 0) {
-      const file = result.files[0];
-      console.log('File selected:', {
-        name: file.name,
-        size: file.size,
-        mimeType: file.mimeType,
-        hasData: !!file.data,
-        hasPath: !!file.path
-      });
-      
-      // Check if it's a valid file type
-      if (!file.name.endsWith('.map') && !file.name.endsWith('.gz') && !file.name.endsWith('.fmg')) {
-        tip(`Please select a .map, .gz, or .fmg file. Selected: ${file.name}`, false, "error", 5000);
-        return;
+    
+    // Request permissions
+    await Filesystem.requestPermissions();
+    
+    // Try to find .map and .gz files in different directories
+    const dirAttempts = [
+      { dir: 'DOCUMENTS', name: 'Documents' },
+      { dir: 'EXTERNAL', name: 'External Storage' },
+      { dir: 'EXTERNAL_STORAGE', name: 'External Storage Root' },
+      { dir: 'DATA', name: 'App Data' }
+    ];
+    
+    let allFiles = [];
+    
+    for (const attempt of dirAttempts) {
+      try {
+        const result = await Filesystem.readdir({
+          path: '',
+          directory: attempt.dir
+        });
+        
+        const mapFiles = result.files
+          .filter(file => file.name && (
+            file.name.endsWith('.map') || 
+            file.name.endsWith('.gz') ||
+            file.name.endsWith('.fmg')
+          ))
+          .map(file => ({
+            name: file.name,
+            path: file.name,
+            directory: attempt.dir,
+            directoryName: attempt.name,
+            fullPath: file.name
+          }));
+        
+        allFiles.push(...mapFiles);
+        console.log(`Found ${mapFiles.length} map files in ${attempt.name}`);
+      } catch (error) {
+        console.log(`Could not access ${attempt.name}: ${error.message}`);
       }
-
-      tip(`Loading file: ${file.name}...`, false, "info", 3000);
-      
-      if (file.data) {
-        // Convert base64 data to Blob
-        try {
-          const byteCharacters = atob(file.data);
-          const byteNumbers = new Array(byteCharacters.length);
-          for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
-          }
-          const byteArray = new Uint8Array(byteNumbers);
-          const blob = new Blob([byteArray], { type: file.mimeType || 'application/octet-stream' });
-          
-          console.log(`File loaded successfully: ${file.name}, size: ${blob.size} bytes`);
-          uploadMap(blob);
-          
-        } catch (error) {
-          console.error('Error processing file data:', error);
-          tip(`Error processing file: ${error.message}`, false, "error", 5000);
-        }
-      } else {
-        console.error('No file data available from FilePicker');
-        tip('Error: File data not available from picker. Try selecting a different file.', false, "error", 5000);
-      }
-    } else {
-      console.log('No file selected or user cancelled');
-      tip('No file selected', false, "info", 2000);
     }
+    
+    if (allFiles.length === 0) {
+      tip("No .map or .gz files found in device storage", false, "error", 5000);
+      return;
+    }
+    
+    showAndroidFileSelectionDialog(allFiles);
     
   } catch (error) {
-    console.error("FilePicker error:", error);
-    let errorMessage = 'Error opening file picker';
-    
-    if (error.message) {
-      if (error.message.includes('permission')) {
-        errorMessage = 'Storage permission denied. Please grant file access permission in Android settings.';
-      } else if (error.message.includes('cancelled') || error.message.includes('canceled')) {
-        errorMessage = 'File selection cancelled';
-      } else {
-        errorMessage = `Error: ${error.message}`;
-      }
-    }
-    
-    tip(errorMessage, false, error.message?.includes('cancelled') ? "info" : "error", 5000);
+    console.error("Android file loading error:", error);
+    tip(`Error accessing device storage: ${error.message}`, false, "error", 5000);
   }
 }
-
-// Make function globally accessible
-window.loadFromAndroidDevice = loadFromAndroidDevice;
 
 // Make function globally accessible for onclick
 window.loadSelectedAndroidFile = loadSelectedAndroidFile;
@@ -1076,7 +966,6 @@ function showAndroidFileSelectionDialog(files) {
 // Initialize Android-specific UI when page loads
 document.addEventListener('DOMContentLoaded', function() {
   initAndroidUI();
-  initAndroidPermissions();
 });
 
 async function initAndroidUI() {
@@ -1098,69 +987,5 @@ async function initAndroidUI() {
         btn.setAttribute('data-tip', currentTip.replace('Downloads', 'device storage'));
       }
     });
-  }
-}
-
-// Android permission initialization - call this when app starts
-async function initAndroidPermissions() {
-  if (window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android') {
-    try {
-      const { Filesystem } = window.Capacitor.Plugins;
-      
-      if (Filesystem) {
-        console.log('Requesting Android filesystem permissions...');
-        const permissions = await Filesystem.requestPermissions();
-        
-        console.log('Android permissions result:', permissions);
-        
-        if (permissions.publicStorage !== 'granted') {
-          // Show a helpful message for Samsung devices
-          const message = `
-            <div style="text-align: left;">
-              <p><strong>Storage Access Required</strong></p>
-              <p>To save and load map files on your device, please grant storage permissions:</p>
-              <ol>
-                <li>Go to <strong>Android Settings</strong></li>
-                <li>Find <strong>Apps</strong> or <strong>Application Manager</strong></li>
-                <li>Find <strong>Fantasy Map Generator</strong></li>
-                <li>Tap <strong>Permissions</strong></li>
-                <li>Tap <strong>Files and media</strong></li>
-                <li>Select <strong>Allow management of all files</strong></li>
-              </ol>
-              <p><small>For Samsung devices: You may also need to enable "Allow access to manage all files" in the special permissions section.</small></p>
-            </div>
-          `;
-          
-          // Show this as a dialog that user can dismiss
-          setTimeout(() => {
-            alertMessage.innerHTML = message;
-            $("#alert").dialog({
-              resizable: false,
-              title: "Storage Permission Needed",
-              width: "400px",
-              maxHeight: "600px",
-              buttons: {
-                "Open Settings": function() {
-                  // Try to open app settings
-                  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
-                    window.Capacitor.Plugins.App.openSettings();
-                  }
-                  $(this).dialog("close");
-                },
-                "Skip for now": function() {
-                  $(this).dialog("close");
-                }
-              },
-              position: { my: "center", at: "center", of: "svg" }
-            });
-          }, 2000); // Delay to let app finish loading
-        } else {
-          console.log('Storage permissions granted');
-          tip('Storage permissions granted - you can now save and load files', false, 'success', 3000);
-        }
-      }
-    } catch (error) {
-      console.error('Error initializing Android permissions:', error);
-    }
   }
 }
